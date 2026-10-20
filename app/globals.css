@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-plum: #7d0f45;
+  --color-berry: #d1348a;
+  --color-blush: #f7c1da;
+  --color-petal: #fdeaf3;
+  --color-lilac: #ead4f2;
+  --color-cream: #fff8f3;
+  --color-ink: #4a1531;
+  --font-sans: var(--font-poppins);
+  --font-display: var(--font-fredoka);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans), sans-serif;
+}
