@@ -7,9 +7,9 @@ export const metadata = {
 
 export default function OrderPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="font-display text-4xl text-plum">Place your order</h1>
-      <p className="mt-2">Four quick steps, then your order is sent to us on WhatsApp.</p>
+    <div className="mx-auto max-w-2xl px-5 py-12 md:py-16">
+      <h1 className="font-display text-5xl font-black md:text-6xl">Place your order</h1>
+      <p className="mt-3 text-lg">Four short steps, then your order opens in WhatsApp ready to send.</p>
       <OrderForm />
     </div>
   );

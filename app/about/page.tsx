@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { BUSINESS, CAKE_FLAVOURS } from "@/lib/menu";
 import { LEAD_HOURS } from "@/lib/schedule";
 
@@ -6,6 +8,8 @@ export const metadata = {
   title: "About & FAQ | Dee's Treats",
   description: "About Dee's Treats and answers to common ordering questions.",
 };
+
+const photo = photoByName("loaves-packed");
 
 const FAQ = [
   {
@@ -40,43 +44,58 @@ const FAQ = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="font-display text-4xl text-plum">About Dee&apos;s Treats</h1>
-      <p className="mt-4 text-lg">
-        {BUSINESS.name} bakes custom cakes and small chops to order, from simple birthday cakes to party packs for a crowd.
-        {" "}{BUSINESS.tagline}
-      </p>
-
-      <h2 className="mt-12 font-display text-3xl text-plum">FAQ</h2>
-      <div className="mt-4 space-y-3">
-        {FAQ.map((item) => (
-          <details key={item.q} className="group rounded-3xl border-2 border-blush bg-white px-5 py-4">
-            <summary className="cursor-pointer list-none font-semibold text-plum">
-              <span className="flex items-center justify-between gap-4">
-                {item.q}
-                <span aria-hidden className="text-berry transition group-open:rotate-45">+</span>
-              </span>
-            </summary>
-            <p className="mt-3">{item.a}</p>
-          </details>
-        ))}
+    <div className="mx-auto max-w-6xl px-5 py-12 md:py-16">
+      <div className="grid items-center gap-10 md:grid-cols-[1.2fr_0.8fr] md:gap-16">
+        <div>
+          <h1 className="font-display text-5xl font-black md:text-7xl">About Dee&apos;s Treats</h1>
+          <p className="mt-6 max-w-[48ch] text-lg md:text-xl">
+            {BUSINESS.name} bakes custom cakes and small chops to order, from simple birthday cakes to party packs for
+            a crowd. {BUSINESS.tagline}
+          </p>
+        </div>
+        <Image
+          src={photo.src}
+          alt={photo.alt}
+          {...PHOTO_SIZE}
+          className="aspect-[4/5] w-full max-w-xs rounded-xl object-cover md:max-w-none"
+        />
       </div>
 
-      <div className="mt-10 rounded-3xl bg-petal p-6 text-center">
-        <p className="font-display text-2xl text-plum">Still have a question?</p>
-        <p className="mt-1">
-          Call or WhatsApp{" "}
-          <a href={`tel:${BUSINESS.phone}`} className="font-semibold text-plum">
-            {BUSINESS.phone}
-          </a>
-          .
-        </p>
-        <Link
-          href="/order"
-          className="mt-4 inline-block rounded-full bg-berry px-8 py-3 font-medium text-white transition hover:bg-plum"
-        >
-          Start your order
-        </Link>
+      <div className="mt-20 max-w-3xl">
+        <h2 className="font-display text-4xl font-bold">FAQ</h2>
+        <div className="mt-6 border-t-2 border-dotted border-plum/40">
+          {FAQ.map((item) => (
+            <details key={item.q} className="group border-b-2 border-dotted border-plum/40 py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-xl font-semibold [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <span
+                  aria-hidden
+                  className="shrink-0 font-display text-3xl font-bold leading-none text-cherry transition group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 max-w-[60ch] text-lg">{item.a}</p>
+            </details>
+          ))}
+        </div>
+
+        <div className="mt-14 rounded-xl bg-frosting p-6 md:p-8">
+          <p className="font-display text-3xl font-bold">Still have a question?</p>
+          <p className="mt-2 text-lg">
+            Call or WhatsApp{" "}
+            <a href={`tel:${BUSINESS.phone}`} className="font-semibold underline underline-offset-4">
+              {BUSINESS.phone}
+            </a>
+            .
+          </p>
+          <Link
+            href="/order"
+            className="mt-5 inline-block rounded-full bg-cherry px-8 py-3.5 text-lg font-semibold text-white transition hover:bg-cherry-deep"
+          >
+            Start your order
+          </Link>
+        </div>
       </div>
     </div>
   );

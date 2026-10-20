@@ -16,9 +16,9 @@ const STEP_TITLES = ["What would you like?", "The details", "Pickup or delivery"
 const LAST_STEP = STEP_TITLES.length - 1;
 
 const inputClass =
-  "w-full rounded-2xl border-2 border-blush bg-white px-4 py-3 outline-none focus:border-berry";
+  "w-full rounded-lg border-2 border-plum/40 bg-white px-4 py-3 text-base text-plum placeholder:text-plum/60 focus:border-cherry";
 const primaryButton =
-  "flex-1 rounded-full bg-berry px-6 py-3 font-medium text-white transition hover:bg-plum";
+  "min-h-12 flex-1 rounded-full bg-cherry px-6 py-3 font-semibold text-white transition hover:bg-cherry-deep";
 
 type Patch = (patch: Partial<Order>) => void;
 
@@ -81,7 +81,7 @@ function Choice({
         onChange={() => onChange(value)}
         className="peer sr-only"
       />
-      <span className="flex items-center justify-between gap-3 rounded-2xl border-2 border-blush bg-white px-4 py-3 text-plum transition peer-checked:border-berry peer-checked:bg-petal peer-focus-visible:ring-2 peer-focus-visible:ring-berry peer-disabled:opacity-40">
+      <span className="relative flex min-h-12 items-center justify-between gap-3 rounded-lg border-2 border-plum/40 bg-white px-4 py-3 text-plum transition after:absolute after:-right-2 after:-top-2 after:hidden after:size-6 after:items-center after:justify-center after:rounded-full after:bg-cherry after:text-sm after:font-semibold after:text-white after:content-['✓'] peer-checked:border-cherry peer-checked:bg-frosting-soft peer-checked:shadow-[inset_0_0_0_1px_var(--color-cherry)] peer-checked:after:flex peer-focus-visible:ring-2 peer-focus-visible:ring-cherry peer-focus-visible:ring-offset-2 peer-disabled:opacity-40">
         {children}
       </span>
     </label>
@@ -106,9 +106,9 @@ function CategoryStep({ order, update }: { order: Order; update: Patch }) {
         >
           <span>
             <span className="block font-semibold">{CATEGORIES[key].label}</span>
-            <span className="block text-sm font-normal text-ink">{CATEGORIES[key].blurb}</span>
+            <span className="block text-sm font-normal text-plum">{CATEGORIES[key].blurb}</span>
           </span>
-          <span className="shrink-0 text-sm font-medium text-berry">
+          <span className="shrink-0 text-sm font-medium text-cherry">
             From {formatNaira(CATEGORIES[key].startingPrice)}
           </span>
         </Choice>
@@ -132,7 +132,7 @@ function CakeStep({ order, update }: { order: Order; update: Patch }) {
               onChange={(id) => update({ size: id })}
             >
               <span className="font-semibold">{size.label}</span>
-              <span className="text-sm font-medium text-berry">{formatNaira(size.price)}</span>
+              <span className="text-sm font-medium text-cherry">{formatNaira(size.price)}</span>
             </Choice>
           ))}
         </div>
@@ -182,12 +182,12 @@ function SmallChopsStep({ order, update }: { order: Order; update: Patch }) {
           return (
             <div
               key={item.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border-2 border-blush bg-white px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-lg border-2 border-plum/25 bg-white px-4 py-3"
             >
               <div>
                 <p className="font-semibold text-plum">{item.name}</p>
                 <p className="text-sm">{item.detail}</p>
-                <p className="text-sm font-medium text-berry">{formatNaira(item.price)}</p>
+                <p className="text-sm font-medium text-cherry">{formatNaira(item.price)}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <button
@@ -195,7 +195,7 @@ function SmallChopsStep({ order, update }: { order: Order; update: Patch }) {
                   aria-label={`Remove one ${item.name}`}
                   disabled={quantity === 0}
                   onClick={() => setQuantity(item.id, quantity - 1)}
-                  className="h-9 w-9 rounded-full border-2 border-berry text-lg text-berry disabled:opacity-30"
+                  className="size-11 rounded-full border-2 border-cherry text-xl text-cherry disabled:opacity-30"
                 >
                   −
                 </button>
@@ -206,7 +206,7 @@ function SmallChopsStep({ order, update }: { order: Order; update: Patch }) {
                   type="button"
                   aria-label={`Add one ${item.name}`}
                   onClick={() => setQuantity(item.id, quantity + 1)}
-                  className="h-9 w-9 rounded-full border-2 border-berry text-lg text-berry"
+                  className="size-11 rounded-full border-2 border-cherry text-xl text-cherry"
                 >
                   +
                 </button>
@@ -320,7 +320,7 @@ function ContactStep({ order, category, update }: { order: Order; category: Cate
 
   return (
     <>
-      <div className="rounded-3xl bg-petal p-5 text-sm">
+      <div className="rounded-lg bg-frosting-soft p-5 text-sm">
         <p className="font-semibold text-plum">{CATEGORIES[category].label}</p>
         <ul className="mt-1 list-disc pl-5">
           {orderLines(order).map((line) => (
@@ -392,8 +392,9 @@ export default function OrderForm() {
 
   if (sent) {
     return (
-      <div className="mt-8 rounded-3xl border-2 border-blush bg-white p-6 text-center">
-        <h2 className="font-display text-2xl text-plum">Almost done</h2>
+      <div className="mt-8 overflow-hidden rounded-xl border-2 border-plum/20 bg-white">
+        <div className="p-6 md:p-8">
+        <h2 className="font-display text-3xl font-bold text-plum">Almost done</h2>
         <p className="mt-2">
           Tap send in WhatsApp and we will confirm your order there. If WhatsApp did not open, use the button below.
         </p>
@@ -401,7 +402,7 @@ export default function OrderForm() {
           href={whatsappUrl(order)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 inline-block rounded-full bg-berry px-8 py-3 font-medium text-white transition hover:bg-plum"
+          className="mt-5 inline-block rounded-full bg-cherry px-8 py-3 font-semibold text-white transition hover:bg-cherry-deep"
         >
           Open WhatsApp
         </a>
@@ -412,10 +413,11 @@ export default function OrderForm() {
             setStep(0);
             setSent(false);
           }}
-          className="mt-3 block w-full font-medium text-plum underline"
+          className="mt-4 block font-semibold text-plum underline underline-offset-4"
         >
           Start a new order
         </button>
+        </div>
       </div>
     );
   }
@@ -423,17 +425,18 @@ export default function OrderForm() {
   const category = order.category;
 
   return (
-    <form onSubmit={submit} noValidate className="mt-8">
+    <form onSubmit={submit} noValidate className="mt-8 overflow-hidden rounded-xl border-2 border-plum/20 bg-white">
+      <div className="p-5 md:p-8">
       <div ref={topRef} className="scroll-mt-24">
-        <p className="text-sm font-medium text-berry">
+        <p className="font-semibold text-cherry">
           Step {step + 1} of {STEP_TITLES.length}
         </p>
         <div className="mt-2 flex gap-2" aria-hidden>
           {STEP_TITLES.map((title, i) => (
-            <span key={title} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-berry" : "bg-blush"}`} />
+            <span key={title} className={`h-2 flex-1 rounded-full ${i <= step ? "bg-cherry" : "bg-plum/15"}`} />
           ))}
         </div>
-        <h2 className="mt-4 font-display text-2xl text-plum">{STEP_TITLES[step]}</h2>
+        <h2 className="mt-5 font-display text-3xl font-bold text-plum">{STEP_TITLES[step]}</h2>
       </div>
 
       <div className="mt-4 space-y-5">
@@ -445,7 +448,7 @@ export default function OrderForm() {
       </div>
 
       {error && (
-        <p role="alert" className="mt-4 rounded-2xl bg-petal px-4 py-3 text-sm font-medium text-plum">
+        <p role="alert" className="mt-4 rounded-lg border-2 border-cherry bg-frosting-soft px-4 py-3 font-semibold text-plum">
           {error}
         </p>
       )}
@@ -455,7 +458,7 @@ export default function OrderForm() {
           <button
             type="button"
             onClick={() => go(step - 1)}
-            className="rounded-full border-2 border-plum px-6 py-3 font-medium text-plum"
+            className="min-h-12 rounded-full border-2 border-plum px-6 py-3 font-semibold text-plum transition hover:bg-frosting-soft"
           >
             Back
           </button>
@@ -463,6 +466,7 @@ export default function OrderForm() {
         <button type="submit" className={primaryButton}>
           {step < LAST_STEP ? "Continue" : "Send order on WhatsApp"}
         </button>
+      </div>
       </div>
     </form>
   );

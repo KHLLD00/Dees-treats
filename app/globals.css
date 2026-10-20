@@ -1,19 +1,72 @@
 @import "tailwindcss";
 
 @theme {
-  --color-plum: #7d0f45;
-  --color-berry: #d1348a;
-  --color-blush: #f7c1da;
-  --color-petal: #fdeaf3;
-  --color-lilac: #ead4f2;
-  --color-cream: #fff8f3;
-  --color-ink: #4a1531;
-  --font-sans: var(--font-poppins);
-  --font-display: var(--font-fredoka);
+  /* Colours come from the logo (cherry, plum, frosting) and the cupcake liner (apricot) */
+  --color-cherry: #b8153f;
+  --color-cherry-deep: #8f0f31;
+  --color-plum: #42102c;
+  --color-frosting: #f7b7cf;
+  --color-frosting-soft: #fde4ee;
+  --color-icing: #fff9f7;
+  --color-apricot: #ffc46b;
+  --font-sans: var(--font-figtree);
+  --font-display: var(--font-fraunces);
 }
 
-body {
-  background: var(--color-cream);
-  color: var(--color-ink);
-  font-family: var(--font-sans), sans-serif;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-icing);
+    color: var(--color-plum);
+    font-family: var(--font-sans), sans-serif;
+    line-height: 1.6;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-cherry);
+    outline-offset: 3px;
+  }
+}
+
+/* Red and white tray paper, the same paper the loaves are photographed on */
+.gingham {
+  background-color: #fff;
+  background-image:
+    linear-gradient(90deg, rgb(184 21 63 / 0.55) 50%, transparent 50%),
+    linear-gradient(rgb(184 21 63 / 0.55) 50%, transparent 50%);
+  background-size: 20px 20px;
+}
+
+/* The one page-load moment: the price tag settles once */
+@keyframes tag-swing {
+  0% {
+    transform: rotate(-9deg);
+  }
+  35% {
+    transform: rotate(5deg);
+  }
+  65% {
+    transform: rotate(-2.5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.tag-swing {
+  transform-origin: 50% 0;
+  animation: tag-swing 1.6s ease-out 0.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .tag-swing {
+    animation: none;
+  }
 }

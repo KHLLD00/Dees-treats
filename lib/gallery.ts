@@ -39,6 +39,14 @@ export const GALLERY = [
   },
 ];
 
+const ALL_PHOTOS = GALLERY.flatMap((group) => group.photos);
+
+export function photoByName(name: string): Photo {
+  const found = ALL_PHOTOS.find((p) => p.src === `/gallery/${name}.webp`);
+  if (!found) throw new Error(`Unknown gallery photo: ${name}`);
+  return found;
+}
+
 export const FEATURED = [
   GALLERY[0].photos[0],
   GALLERY[1].photos[1],

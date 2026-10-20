@@ -5,19 +5,21 @@ import Footer from "@/components/Footer";
 import { MobileTabs } from "@/components/Nav";
 import "./globals.css";
 
-const fredoka = localFont({
-  src: "./fonts/fredoka-latin-wght-normal.woff2",
-  variable: "--font-fredoka",
-  weight: "300 700",
+const fraunces = localFont({
+  src: [
+    { path: "./fonts/Fraunces72ptSoft-Bold.ttf", weight: "700" },
+    { path: "./fonts/Fraunces72ptSoft-Black.ttf", weight: "900" },
+  ],
+  variable: "--font-fraunces",
 });
 
-const poppins = localFont({
+const figtree = localFont({
   src: [
-    { path: "./fonts/poppins-latin-400-normal.woff2", weight: "400" },
-    { path: "./fonts/poppins-latin-500-normal.woff2", weight: "500" },
-    { path: "./fonts/poppins-latin-600-normal.woff2", weight: "600" },
+    { path: "./fonts/Figtree-Regular.ttf", weight: "400" },
+    { path: "./fonts/Figtree-Medium.ttf", weight: "500" },
+    { path: "./fonts/Figtree-SemiBold.ttf", weight: "600" },
   ],
-  variable: "--font-poppins",
+  variable: "--font-figtree",
 });
 
 export const metadata: Metadata = {
@@ -28,10 +30,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${fredoka.variable} ${poppins.variable} h-full antialiased`}>
+    <html lang="en" className={`${fraunces.variable} ${figtree.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col pb-20 md:pb-0">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-full focus:bg-plum focus:px-5 focus:py-2 focus:font-semibold focus:text-icing"
+        >
+          Skip to content
+        </a>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main id="main" className="flex-1">
+          {children}
+        </main>
         <Footer />
         <MobileTabs />
       </body>
