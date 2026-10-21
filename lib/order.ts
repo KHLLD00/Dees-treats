@@ -39,6 +39,19 @@ export function orderLines(order: Order) {
   );
 }
 
+export type ReceiptLine = { label: string; price: number };
+
+export function receiptLines(order: Order): ReceiptLine[] {
+  if (order.category === "cake") {
+    const size = CAKE_SIZES.find((s) => s.id === order.size);
+    return size ? [{ label: `${size.label} ${order.flavour} cake`, price: size.price }] : [];
+  }
+  return SMALL_CHOPS.filter((i) => order.quantities[i.id] > 0).map((i) => ({
+    label: `${order.quantities[i.id]} x ${i.name}`,
+    price: i.price * order.quantities[i.id],
+  }));
+}
+
 export function orderTotal(order: Order) {
   if (order.category === "cake") {
     return CAKE_SIZES.find((s) => s.id === order.size)?.price ?? 0;
@@ -70,6 +83,11 @@ export function buildMessage(order: Order) {
   return lines.join("\n");
 }
 
-export function whatsappUrl(order: Order) {
-  return `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(buildMessage(order))}`;
+// The receipt image carries the order details, so the chat opens with one short line.
+// If the receipt could not be made, the full written order is sent instead.
+export function whatsappUrl(order: Order, ref: string, receiptMade: boolean) {
+  const text = receiptMade
+    ? `Hello ${BUSINESS.name}, here is my order receipt. Order ref: ${ref}`
+    : `${buildMessage(order)}\n\nOrder ref: ${ref}`;
+  return `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(text)}`;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   CAKE_FLAVOURS,
   CAKE_SIZES,
@@ -10,6 +10,7 @@ import {
   type Category,
 } from "@/lib/menu";
 import { emptyOrder, orderLines, orderTotal, whatsappUrl, type Order } from "@/lib/order";
+import { createReceipt, makeOrderRef } from "@/lib/receipt";
 import { earliestDate, formatDate, isSlotOpen, LEAD_HOURS, TIME_SLOTS } from "@/lib/schedule";
 
 const STEP_TITLES = ["What would you like?", "The details", "Pickup or delivery", "Your details"];
@@ -367,7 +368,8 @@ export default function OrderForm() {
   const [step, setStep] = useState(0);
   const [order, setOrder] = useState<Order>(emptyOrder);
   const [error, setError] = useState("");
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<{ ref: string; receiptUrl: string | null } | null>(null);
+  const [working, setWorking] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
   const update: Patch = (patch) => {
@@ -381,42 +383,87 @@ export default function OrderForm() {
     topRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (working) return;
     const problem = validate(step, order);
     if (problem) return setError(problem);
     if (step < LAST_STEP) return go(step + 1);
-    window.open(whatsappUrl(order), "_blank", "noopener,noreferrer");
-    setSent(true);
+
+    setWorking(true);
+    const ref = makeOrderRef();
+    const receipt = await createReceipt(order, ref);
+    if (receipt) {
+      const link = document.createElement("a");
+      link.href = receipt.url;
+      link.download = `dees-treats-receipt-${ref}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+    setSent({ ref, receiptUrl: receipt?.url ?? null });
+    setWorking(false);
   }
 
+  // After the receipt downloads, move the customer to the WhatsApp chat
+  useEffect(() => {
+    if (!sent) return;
+    const timer = window.setTimeout(() => {
+      window.location.assign(whatsappUrl(order, sent.ref, sent.receiptUrl !== null));
+    }, 2500);
+    return () => window.clearTimeout(timer);
+    // order is frozen once the receipt is made, so only `sent` matters here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sent]);
+
   if (sent) {
+    const whatsapp = whatsappUrl(order, sent.ref, sent.receiptUrl !== null);
     return (
       <div className="mt-8 overflow-hidden rounded-xl border-2 border-plum/20 bg-white">
         <div className="p-6 md:p-8">
-        <h2 className="font-display text-3xl font-bold text-plum">Almost done</h2>
-        <p className="mt-2">
-          Tap send in WhatsApp and we will confirm your order there. If WhatsApp did not open, use the button below.
-        </p>
-        <a
-          href={whatsappUrl(order)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 inline-block rounded-full bg-cherry px-8 py-3 font-semibold text-white transition hover:bg-cherry-deep"
-        >
-          Open WhatsApp
-        </a>
-        <button
-          type="button"
-          onClick={() => {
-            setOrder(emptyOrder);
-            setStep(0);
-            setSent(false);
-          }}
-          className="mt-4 block font-semibold text-plum underline underline-offset-4"
-        >
-          Start a new order
-        </button>
+          <h2 className="font-display text-3xl font-bold text-plum">
+            {sent.receiptUrl ? "Your receipt is downloading" : "Almost done"}
+          </h2>
+          <p className="mt-1 font-semibold text-cherry">Order ref {sent.ref}</p>
+          {sent.receiptUrl ? (
+            <>
+              <ol className="mt-4 list-decimal space-y-1 pl-5 text-lg">
+                <li>We are opening WhatsApp now.</li>
+                <li>Tap the attach button in the chat and choose your receipt image.</li>
+                <li>Send it, and we will confirm your order there.</li>
+              </ol>
+              <a
+                href={sent.receiptUrl}
+                download={`dees-treats-receipt-${sent.ref}.png`}
+                className="mt-4 inline-block font-semibold text-plum underline underline-offset-4"
+              >
+                Receipt did not download? Save it again
+              </a>
+            </>
+          ) : (
+            <p className="mt-3 text-lg">
+              We could not make your receipt image, so your full order will be written out in WhatsApp instead. Tap
+              send there and we will confirm it.
+            </p>
+          )}
+          <a
+            href={whatsapp}
+            className="mt-6 block rounded-full bg-cherry px-8 py-3.5 text-center text-lg font-semibold text-white transition hover:bg-cherry-deep"
+          >
+            Open WhatsApp
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              if (sent.receiptUrl) URL.revokeObjectURL(sent.receiptUrl);
+              setOrder(emptyOrder);
+              setStep(0);
+              setSent(null);
+            }}
+            className="mt-4 block font-semibold text-plum underline underline-offset-4"
+          >
+            Start a new order
+          </button>
         </div>
       </div>
     );
@@ -463,8 +510,8 @@ export default function OrderForm() {
             Back
           </button>
         )}
-        <button type="submit" className={primaryButton}>
-          {step < LAST_STEP ? "Continue" : "Send order on WhatsApp"}
+        <button type="submit" disabled={working} className={`${primaryButton} disabled:opacity-60`}>
+          {step < LAST_STEP ? "Continue" : working ? "Making your receipt..." : "Confirm order and get receipt"}
         </button>
       </div>
       </div>
