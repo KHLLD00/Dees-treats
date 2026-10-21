@@ -1,13 +1,14 @@
 import { BUSINESS, CAKE_SIZES, formatNaira, SMALL_CHOPS } from "./menu";
 import { formatDate } from "./schedule";
 
-// One order can hold a cake, small chops, or both.
+// One order can hold any number of cakes (each with its own size, flavour and design
+// notes) plus any quantity of each small chops pack.
+export type Cake = { id: string; size: string; flavour: string; notes: string };
+
 export type Order = {
   fulfilment: "pickup" | "delivery";
   address: string;
-  size: string;
-  flavour: string;
-  cakeNotes: string;
+  cakes: Cake[];
   quantities: Record<string, number>;
   notes: string;
   date: string;
@@ -18,9 +19,7 @@ export type Order = {
 export const emptyOrder: Order = {
   fulfilment: "pickup",
   address: "",
-  size: "",
-  flavour: "",
-  cakeNotes: "",
+  cakes: [],
   quantities: {},
   notes: "",
   date: "",
@@ -28,13 +27,18 @@ export const emptyOrder: Order = {
   phone: "",
 };
 
-export type ReceiptLine = { label: string; price: number };
+export type ReceiptLine = { label: string; price: number; note?: string };
 
 export function receiptLines(order: Order): ReceiptLine[] {
   const lines: ReceiptLine[] = [];
-  const size = CAKE_SIZES.find((s) => s.id === order.size);
-  if (size && order.flavour) {
-    lines.push({ label: `${size.label} ${order.flavour} cake`, price: size.price });
+  for (const cake of order.cakes) {
+    const size = CAKE_SIZES.find((s) => s.id === cake.size);
+    if (!size) continue;
+    lines.push({
+      label: `${size.label} ${cake.flavour} cake`,
+      price: size.price,
+      note: cake.notes.trim() || undefined,
+    });
   }
   for (const item of SMALL_CHOPS) {
     const quantity = order.quantities[item.id] ?? 0;
@@ -57,9 +61,11 @@ export function buildMessage(order: Order, ref: string) {
     `Hello ${BUSINESS.name}, I'd like to place an order.`,
     `Order ref: ${ref}`,
     "",
-    ...receiptLines(order).map((line) => `${line.label} (${formatNaira(line.price)})`),
+    ...receiptLines(order).flatMap((line) => [
+      `${line.label} (${formatNaira(line.price)})`,
+      ...(line.note ? [`   Design notes: ${line.note}`] : []),
+    ]),
   ];
-  if (order.cakeNotes.trim()) lines.push(`Design notes: ${order.cakeNotes.trim()}`);
   if (order.notes.trim()) lines.push(`Notes: ${order.notes.trim()}`);
   lines.push(
     "",

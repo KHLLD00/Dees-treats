@@ -171,6 +171,15 @@ function draw(
     ctx.textAlign = "right";
     ctx.fillText(price, WIDTH - PAD, lastY);
     y = lastY;
+
+    if (item.note) {
+      ctx.textAlign = "left";
+      ctx.font = `400 20px ${fonts.body}`;
+      ctx.fillStyle = COLOR.muted;
+      const noteLines = wrap(ctx, `Design notes: ${item.note}`, innerWidth - 24);
+      noteLines.forEach((line, i) => ctx.fillText(line, PAD + 24, y + 28 + i * 26));
+      y += 28 + (noteLines.length - 1) * 26;
+    }
   }
 
   const noteBlock = (title: string, text: string) => {
@@ -185,7 +194,6 @@ function draw(
     lines.forEach((line, i) => ctx.fillText(line, PAD, y + 32 + i * 30));
     y += 32 + (lines.length - 1) * 30;
   };
-  if (order.cakeNotes.trim()) noteBlock("Cake design notes", order.cakeNotes.trim());
   if (order.notes.trim()) noteBlock("Notes", order.notes.trim());
 
   y += 14;

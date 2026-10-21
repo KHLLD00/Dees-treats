@@ -16,9 +16,15 @@ const secondaryButton =
 type Patch = (patch: Partial<Order>) => void;
 type Receipt = { url: string; ref: string };
 
-function validate(order: Order): string {
-  const hasCakePart = Boolean(order.size || order.flavour);
-  if (hasCakePart && (!order.size || !order.flavour)) return "Choose both a size and a flavour for your cake.";
+type CakeDraft = { size: string; flavour: string; notes: string };
+const emptyDraft: CakeDraft = { size: "", flavour: "", notes: "" };
+
+function validate(order: Order, draft: CakeDraft): string {
+  if (draft.size || draft.flavour) {
+    return draft.size && draft.flavour
+      ? "Tap Add cake to order to include the cake you picked, or remove it."
+      : "Choose both a size and a flavour for your cake, then tap Add cake to order.";
+  }
   if (!hasItems(order)) return "Pick a cake or at least one small chops pack.";
   if (order.fulfilment === "delivery" && !order.address.trim()) return "Enter your delivery address.";
   if (!order.date) return "Pick the date you need it by.";
@@ -75,6 +81,8 @@ function Modal({ labelledBy, children }: { labelledBy: string; children: ReactNo
 
 export default function OrderSection() {
   const [order, setOrder] = useState<Order>(emptyOrder);
+  const [draft, setDraft] = useState<CakeDraft>(emptyDraft);
+  const nextCakeId = useRef(1);
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -119,14 +127,27 @@ export default function OrderSection() {
   }
 
   function clearItems() {
-    update({ size: "", flavour: "", cakeNotes: "", quantities: {} });
+    update({ cakes: [], quantities: {} });
+    setDraft(emptyDraft);
     setConfirmClear(false);
+  }
+
+  function addCake() {
+    if (!draft.size || !draft.flavour) {
+      return setError("Choose both a size and a flavour for your cake, then tap Add cake to order.");
+    }
+    update({ cakes: [...order.cakes, { id: String(nextCakeId.current++), ...draft }] });
+    setDraft(emptyDraft);
+  }
+
+  function removeCake(id: string) {
+    update({ cakes: order.cakes.filter((cake) => cake.id !== id) });
   }
 
   async function review(e: React.FormEvent) {
     e.preventDefault();
     if (working) return;
-    const problem = validate(order);
+    const problem = validate(order, draft);
     if (problem) return setError(problem);
 
     setWorking(true);
@@ -170,13 +191,14 @@ export default function OrderSection() {
   function startNewOrder() {
     closeReceipt();
     setOrder(emptyOrder);
+    setDraft(emptyDraft);
     setError("");
   }
 
   const lines = receiptLines(order);
   const total = orderTotal(order);
   const delivery = order.fulfilment === "delivery";
-  const cakeChosen = Boolean(order.size || order.flavour);
+  const draftStarted = Boolean(draft.size || draft.flavour || draft.notes);
 
   return (
     <>
@@ -217,65 +239,113 @@ export default function OrderSection() {
             )}
           </fieldset>
 
-          <p className="-mb-4 text-lg font-semibold">Add a cake, small chops, or both.</p>
+          <p className="-mb-4 text-lg font-semibold">Add as many cakes and small chops as you need.</p>
 
           <div className="space-y-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-display text-2xl font-bold">Cake</h3>
-              {cakeChosen && (
-                <button
-                  type="button"
-                  onClick={() => update({ size: "", flavour: "", cakeNotes: "" })}
-                  className="font-semibold underline underline-offset-4"
-                >
-                  Remove cake
+            <h3 className="font-display text-2xl font-bold">Cakes</h3>
+            <p className="-mt-3">
+              Cakes need {LEAD_HOURS.cake} hours notice. Add as many cakes as you like, each with its own size, flavour
+              and design.
+            </p>
+
+            {order.cakes.length > 0 && (
+              <ul className="space-y-3">
+                {order.cakes.map((cake) => {
+                  const size = CAKE_SIZES.find((x) => x.id === cake.size);
+                  return (
+                    <li
+                      key={cake.id}
+                      className="flex items-start justify-between gap-3 rounded-lg border-2 border-cherry bg-frosting-soft px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-semibold">
+                          {size?.label} {cake.flavour} cake{" "}
+                          <span className="text-cherry">{size ? formatNaira(size.price) : ""}</span>
+                        </p>
+                        {cake.notes.trim() && <p className="mt-0.5">Design notes: {cake.notes.trim()}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCake(cake.id)}
+                        aria-label={`Remove ${size?.label} ${cake.flavour} cake`}
+                        className="shrink-0 font-semibold underline underline-offset-4"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="space-y-6 rounded-xl border-2 border-dashed border-plum/30 p-4 md:p-5">
+              <p className="font-display text-xl font-bold">
+                {order.cakes.length ? "Add another cake" : "Add a cake"}
+              </p>
+              <fieldset>
+                <legend className="mb-2 font-semibold">Size</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  {CAKE_SIZES.map((size) => (
+                    <Choice
+                      key={size.id}
+                      name="size"
+                      value={size.id}
+                      checked={draft.size === size.id}
+                      onChange={(id) => {
+                        setDraft((d) => ({ ...d, size: id }));
+                        setError("");
+                      }}
+                    >
+                      <span className="font-semibold">{size.label}</span>
+                      <span className="font-semibold text-cherry">{formatNaira(size.price)}</span>
+                    </Choice>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend className="mb-2 font-semibold">Flavour</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  {CAKE_FLAVOURS.map((flavour) => (
+                    <Choice
+                      key={flavour}
+                      name="flavour"
+                      value={flavour}
+                      checked={draft.flavour === flavour}
+                      onChange={(value) => {
+                        setDraft((d) => ({ ...d, flavour: value }));
+                        setError("");
+                      }}
+                    >
+                      <span className="font-medium">{flavour}</span>
+                    </Choice>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="block">
+                <span className="mb-2 block font-semibold">Design notes (optional)</span>
+                <textarea
+                  rows={3}
+                  value={draft.notes}
+                  onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+                  placeholder="Colours, theme, message on the cake"
+                  className={inputClass}
+                />
+              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <button type="button" onClick={addCake} className={primaryButton}>
+                  Add cake to order
                 </button>
-              )}
+                {draftStarted && (
+                  <button
+                    type="button"
+                    onClick={() => setDraft(emptyDraft)}
+                    className="font-semibold underline underline-offset-4"
+                  >
+                    Clear this cake
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="-mt-3">Cakes need {LEAD_HOURS.cake} hours notice.</p>
-            <fieldset>
-              <legend className="mb-2 font-semibold">Size</legend>
-              <div className="grid grid-cols-2 gap-3">
-                {CAKE_SIZES.map((size) => (
-                  <Choice
-                    key={size.id}
-                    name="size"
-                    value={size.id}
-                    checked={order.size === size.id}
-                    onChange={(id) => update({ size: id })}
-                  >
-                    <span className="font-semibold">{size.label}</span>
-                    <span className="font-semibold text-cherry">{formatNaira(size.price)}</span>
-                  </Choice>
-                ))}
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend className="mb-2 font-semibold">Flavour</legend>
-              <div className="grid grid-cols-2 gap-3">
-                {CAKE_FLAVOURS.map((flavour) => (
-                  <Choice
-                    key={flavour}
-                    name="flavour"
-                    value={flavour}
-                    checked={order.flavour === flavour}
-                    onChange={(value) => update({ flavour: value })}
-                  >
-                    <span className="font-medium">{flavour}</span>
-                  </Choice>
-                ))}
-              </div>
-            </fieldset>
-            <label className="block">
-              <span className="mb-2 block font-semibold">Design notes (optional)</span>
-              <textarea
-                rows={3}
-                value={order.cakeNotes}
-                onChange={(e) => update({ cakeNotes: e.target.value })}
-                placeholder="Colours, theme, message on the cake"
-                className={inputClass}
-              />
-            </label>
           </div>
 
           <div className="space-y-4">
@@ -351,12 +421,15 @@ export default function OrderSection() {
             <h3 className="font-display text-2xl font-bold">Order summary</h3>
             <ul className="mt-3 min-h-8">
               {lines.length ? (
-                lines.map((line) => (
+                lines.map((line, i) => (
                   <li
-                    key={line.label}
+                    key={`${line.label}-${i}`}
                     className="flex justify-between gap-4 border-b-2 border-dotted border-plum/30 py-2"
                   >
-                    <span>{line.label}</span>
+                    <span>
+                      {line.label}
+                      {line.note && <span className="block text-sm">Design notes: {line.note}</span>}
+                    </span>
                     <span className="shrink-0 font-semibold">{formatNaira(line.price)}</span>
                   </li>
                 ))
