@@ -217,9 +217,11 @@ export default function OrderSection() {
             )}
           </fieldset>
 
+          <p className="-mb-4 text-lg font-semibold">Add a cake, small chops, or both.</p>
+
           <div className="space-y-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-display text-2xl font-bold">Cake (optional)</h3>
+              <h3 className="font-display text-2xl font-bold">Cake</h3>
               {cakeChosen && (
                 <button
                   type="button"
@@ -278,7 +280,7 @@ export default function OrderSection() {
 
           <div className="space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-display text-2xl font-bold">Small chops (optional)</h3>
+              <h3 className="font-display text-2xl font-bold">Small chops</h3>
               {lines.length > 0 && (
                 <button
                   type="button"
