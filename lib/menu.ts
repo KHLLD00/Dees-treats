@@ -16,8 +16,7 @@ export const CAKE_SIZES = [
   { id: "10", label: "10-inch", price: 28000 },
 ];
 
-// Placeholder flavours, replace with Dee's actual list
-export const CAKE_FLAVOURS = ["Vanilla", "Chocolate", "Red velvet", "Strawberry"];
+export const CAKE_FLAVOURS = ["Vanilla", "Red velvet", "Chocolate"];
 
 export const SMALL_CHOPS = [
   { id: "samosas", name: "Samosas", detail: "10 pieces", price: 5000 },
