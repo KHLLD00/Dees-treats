@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // The site is one page now; keep old links working
   async redirects() {
     return [
-      { source: "/menu", destination: "/#menu", permanent: true },
+      { source: "/menu", destination: "/#order", permanent: true },
       { source: "/order", destination: "/#order", permanent: true },
       { source: "/about", destination: "/#about", permanent: true },
     ];

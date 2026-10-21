@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { BUSINESS, CAKE_FLAVOURS, CAKE_SIZES, formatNaira, SMALL_CHOPS } from "@/lib/menu";
 import { emptyOrder, hasItems, receiptLines, orderTotal, whatsappUrl, type Order } from "@/lib/order";
 import { createReceipt, makeOrderRef } from "@/lib/receipt";
-import { LEAD_HOURS, tomorrowValue } from "@/lib/schedule";
+import { isShortNotice, LEAD_NOTICE, todayValue } from "@/lib/schedule";
 
 const inputClass =
   "w-full rounded-lg border-2 border-plum/40 bg-white px-4 py-3 text-base text-plum placeholder:text-plum/60 focus:border-cherry";
@@ -15,6 +15,12 @@ const secondaryButton =
 
 type Patch = (patch: Partial<Order>) => void;
 type Receipt = { url: string; ref: string };
+
+// Today's date only exists in the browser. Reading it this way keeps the server and browser
+// HTML identical without setting state in an effect.
+const subscribeToNothing = () => () => {};
+const getToday = () => todayValue();
+const getServerToday = () => "";
 
 type CakeDraft = { size: string; flavour: string; notes: string };
 const emptyDraft: CakeDraft = { size: "", flavour: "", notes: "" };
@@ -28,7 +34,7 @@ function validate(order: Order, draft: CakeDraft): string {
   if (!hasItems(order)) return "Pick a cake or at least one small chops pack.";
   if (order.fulfilment === "delivery" && !order.address.trim()) return "Enter your delivery address.";
   if (!order.date) return "Pick the date you need it by.";
-  if (order.date < tomorrowValue()) return "Pick a date from tomorrow onwards.";
+  if (order.date < todayValue()) return "Pick today or a later date.";
   if (!order.name.trim()) return "Enter your name.";
   if (!/^\+?[0-9\s-]{10,15}$/.test(order.phone.trim())) return "Enter a valid phone number.";
   return "";
@@ -88,11 +94,9 @@ export default function OrderSection() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [handedOff, setHandedOff] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  // Computed after mount so the server and browser always render the same HTML
-  const [minDate, setMinDate] = useState("");
+  const today = useSyncExternalStore(subscribeToNothing, getToday, getServerToday);
   const receiptRef = useRef<Receipt | null>(null);
 
-  useEffect(() => setMinDate(tomorrowValue()), []);
   receiptRef.current = receipt;
 
   const update: Patch = (patch) => {
@@ -239,13 +243,12 @@ export default function OrderSection() {
             )}
           </fieldset>
 
-          <p className="-mb-4 text-lg font-semibold">Add as many cakes and small chops as you need.</p>
+          <p className="text-lg font-semibold">Add as many cakes and small chops as you need.</p>
 
           <div className="space-y-6">
             <h3 className="font-display text-2xl font-bold">Cakes</h3>
             <p className="-mt-3">
-              Cakes need {LEAD_HOURS.cake} hours notice. Add as many cakes as you like, each with its own size, flavour
-              and design.
+              Add as many cakes as you like, each with its own size, flavour and design.
             </p>
 
             {order.cakes.length > 0 && (
@@ -361,7 +364,6 @@ export default function OrderSection() {
                 </button>
               )}
             </div>
-            <p className="-mt-1">Small chops need {LEAD_HOURS["small-chops"]} hours notice.</p>
             <div className="space-y-3">
               {SMALL_CHOPS.map((item) => {
                 const quantity = order.quantities[item.id] ?? 0;
@@ -473,11 +475,17 @@ export default function OrderSection() {
                 <input
                   type="date"
                   value={order.date}
-                  min={minDate || undefined}
+                  min={today || undefined}
                   onChange={(e) => update({ date: e.target.value })}
                   className={inputClass}
                 />
+                <span className="mt-1 block text-sm">Please order {LEAD_NOTICE} ahead.</span>
               </label>
+              {isShortNotice(order.date, today) && (
+                <p role="status" className="rounded-lg bg-apricot/40 px-4 py-3 text-sm font-semibold">
+                  That is sooner than our usual {LEAD_NOTICE} notice. We confirm the date with you on WhatsApp.
+                </p>
+              )}
             </div>
 
             <button type="submit" disabled={working} className={`${primaryButton} mt-6 w-full`}>

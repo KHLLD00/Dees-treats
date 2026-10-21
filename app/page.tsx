@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { CATEGORIES, formatNaira } from "@/lib/menu";
-import { LEAD_HOURS } from "@/lib/schedule";
+import { LEAD_NOTICE } from "@/lib/schedule";
 import AboutSection from "@/components/AboutSection";
 import OrderSection from "@/components/OrderSection";
 import PhotosSection from "@/components/PhotosSection";
@@ -31,7 +31,7 @@ export default function Home() {
               order to us on WhatsApp.
             </p>
             <p className="mt-4 font-semibold">
-              Cakes need {LEAD_HOURS.cake} hours notice. Small chops need {LEAD_HOURS["small-chops"]} hours.
+              Please order {LEAD_NOTICE} ahead.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -84,7 +84,7 @@ export default function Home() {
             </h3>
             <p className="mt-1 text-lg">{CATEGORIES.cake.blurb}.</p>
             <p className="mt-2 font-semibold text-cherry">
-              From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_HOURS.cake} hours ahead.
+              From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_NOTICE} ahead.
             </p>
           </a>
           <a href="#order" className="group block md:mt-24">
@@ -99,8 +99,7 @@ export default function Home() {
             </h3>
             <p className="mt-1 text-lg">{CATEGORIES["small-chops"].blurb}.</p>
             <p className="mt-2 font-semibold text-cherry">
-              From {formatNaira(CATEGORIES["small-chops"].startingPrice)}. Order {LEAD_HOURS["small-chops"]} hours
-              ahead.
+              From {formatNaira(CATEGORIES["small-chops"].startingPrice)}. Order {LEAD_NOTICE} ahead.
             </p>
           </a>
         </div>

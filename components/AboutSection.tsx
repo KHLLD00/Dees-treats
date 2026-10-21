@@ -1,14 +1,14 @@
 import Image from "next/image";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { BUSINESS, CAKE_FLAVOURS } from "@/lib/menu";
-import { LEAD_HOURS } from "@/lib/schedule";
+import { LEAD_NOTICE } from "@/lib/schedule";
 
 const photo = photoByName("loaves-packed");
 
 const FAQ = [
   {
     q: "How far ahead should I order?",
-    a: `Cakes need ${LEAD_HOURS.cake} hours notice. Small chops need ${LEAD_HOURS["small-chops"]} hours. Pick the date you need it by and we confirm it on WhatsApp.`,
+    a: `Please order ${LEAD_NOTICE} ahead, for cakes and small chops alike. Pick the date you need it by and we confirm it on WhatsApp.`,
   },
   {
     q: "How do I place an order?",
