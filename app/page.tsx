@@ -1,25 +1,22 @@
 import Image from "next/image";
-import Link from "next/link";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { CATEGORIES, formatNaira } from "@/lib/menu";
 import { LEAD_HOURS } from "@/lib/schedule";
+import AboutSection from "@/components/AboutSection";
+import MenuSection from "@/components/MenuSection";
+import OrderSection from "@/components/OrderSection";
+import PhotosSection from "@/components/PhotosSection";
 
 const STEPS = [
-  { title: "Pick what you want", text: "Choose a cake or a small chops pack." },
-  { title: "Add the details", text: "Size, flavour and design notes, or how many packs." },
-  { title: "Choose pickup or delivery", text: "Select a date and time that works for you." },
-  { title: "Send on WhatsApp", text: "Your order goes straight to us and we confirm there." },
+  { title: "Pick what you want", text: "Add a cake, small chops packs, or both." },
+  { title: "Add your details", text: "Pickup or delivery, the date you need it by, your name and phone." },
+  { title: "Get your receipt", text: "Review your order and save the receipt image." },
+  { title: "Send it on WhatsApp", text: "Attach the receipt in the chat and we confirm your order there." },
 ];
 
 const hero = photoByName("cake-crown");
 const cakePhoto = photoByName("cake-pink-flowers");
 const chopsPhoto = photoByName("chops-foil-box");
-const recent = [
-  photoByName("bento-cake"),
-  photoByName("loaves-tray"),
-  photoByName("puff-puff-sieve"),
-  photoByName("cake-yellow-roses"),
-];
 
 export default function Home() {
   return (
@@ -38,18 +35,18 @@ export default function Home() {
               Cakes need {LEAD_HOURS.cake} hours notice. Small chops need {LEAD_HOURS["small-chops"]} hours.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/order"
+              <a
+                href="#order"
                 className="rounded-full bg-cherry px-8 py-3.5 text-center text-lg font-semibold text-white transition hover:bg-cherry-deep"
               >
                 Order now
-              </Link>
-              <Link
-                href="/menu"
+              </a>
+              <a
+                href="#menu"
                 className="rounded-full border-2 border-plum px-8 py-3.5 text-center text-lg font-semibold text-plum transition hover:bg-frosting-soft"
               >
                 See the menu
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -76,7 +73,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 py-16 md:py-24">
         <h2 className="font-display text-4xl font-bold md:text-5xl">What we make</h2>
         <div className="mt-10 grid gap-12 md:grid-cols-[1.25fr_1fr] md:gap-10">
-          <Link href="/menu" className="group block">
+          <a href="#menu" className="group block">
             <Image
               src={cakePhoto.src}
               alt={cakePhoto.alt}
@@ -90,8 +87,8 @@ export default function Home() {
             <p className="mt-2 font-semibold text-cherry">
               From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_HOURS.cake} hours ahead.
             </p>
-          </Link>
-          <Link href="/menu" className="group block md:mt-24">
+          </a>
+          <a href="#menu" className="group block md:mt-24">
             <Image
               src={chopsPhoto.src}
               alt={chopsPhoto.alt}
@@ -106,43 +103,22 @@ export default function Home() {
               From {formatNaira(CATEGORIES["small-chops"].startingPrice)}. Order {LEAD_HOURS["small-chops"]} hours
               ahead.
             </p>
-          </Link>
+          </a>
         </div>
       </section>
 
-      <section className="bg-frosting-soft">
-        <div className="mx-auto max-w-6xl px-5 py-16 md:py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 className="font-display text-4xl font-bold md:text-5xl">Recent bakes</h2>
-            <Link href="/menu#photos" className="font-semibold underline decoration-cherry decoration-[3px] underline-offset-8">
-              See all photos
-            </Link>
-          </div>
-          <ul className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-            {recent.map((photo, i) => (
-              <li key={photo.src} className={i % 2 === 1 ? "md:mt-10" : ""}>
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  {...PHOTO_SIZE}
-                  className="aspect-[4/5] w-full rounded-lg object-cover"
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <MenuSection />
 
-      <section className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-[0.8fr_1.2fr] md:py-24">
+      <section className="mx-auto grid max-w-6xl scroll-mt-20 gap-10 px-5 py-16 md:grid-cols-[0.8fr_1.2fr] md:py-24">
         <div>
           <h2 className="font-display text-4xl font-bold md:text-5xl">How ordering works</h2>
           <p className="mt-4 max-w-[36ch] text-lg">Four short steps. We confirm the final price and payment with you on WhatsApp.</p>
-          <Link
-            href="/order"
+          <a
+            href="#order"
             className="mt-6 inline-block rounded-full bg-cherry px-8 py-3.5 text-lg font-semibold text-white transition hover:bg-cherry-deep"
           >
             Start your order
-          </Link>
+          </a>
         </div>
         <ol className="rounded-xl border-2 border-dashed border-plum/30 bg-white px-6 py-2 md:px-8">
           {STEPS.map((step, i) => (
@@ -158,6 +134,18 @@ export default function Home() {
           ))}
         </ol>
       </section>
+
+      <div aria-hidden className="gingham h-5" />
+      <section id="order" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 md:py-24">
+        <h2 className="font-display text-5xl font-black md:text-6xl">Place your order</h2>
+        <p className="mt-4 max-w-[52ch] text-lg">
+          Pick your items and add your details. You get a receipt image to send to us on WhatsApp.
+        </p>
+        <OrderSection />
+      </section>
+
+      <PhotosSection />
+      <AboutSection />
     </>
   );
 }

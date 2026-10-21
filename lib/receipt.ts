@@ -1,6 +1,6 @@
-import { BUSINESS, CATEGORIES, formatNaira } from "./menu";
+import { BUSINESS, formatNaira } from "./menu";
 import { orderTotal, receiptLines, type Order } from "./order";
-import { formatDate, TIME_SLOTS } from "./schedule";
+import { formatDate } from "./schedule";
 
 // Browser only: draws the receipt on a canvas and returns it as a PNG.
 // No library needed, so there is nothing extra to install.
@@ -92,7 +92,6 @@ function draw(
   fonts: Fonts,
   logo: HTMLImageElement | null,
 ) {
-  const slot = TIME_SLOTS.find((s) => s.id === order.slot);
   const delivery = order.fulfilment === "delivery";
   const innerWidth = WIDTH - PAD * 2;
 
@@ -107,7 +106,7 @@ function draw(
     const w = 130;
     const h = (w * logo.naturalHeight) / logo.naturalWidth;
     ctx.drawImage(logo, PAD, y, w, h);
-    y += h + 30;
+    y += h + 58;
   }
 
   ctx.textAlign = "left";
@@ -151,7 +150,7 @@ function draw(
   ctx.textAlign = "left";
   ctx.fillStyle = COLOR.plum;
   ctx.font = `700 28px ${fonts.display}`;
-  ctx.fillText(order.category ? CATEGORIES[order.category].label : "Your order", PAD, y);
+  ctx.fillText("Your order", PAD, y);
   y += 20;
 
   for (const item of receiptLines(order)) {
@@ -174,24 +173,26 @@ function draw(
     y = lastY;
   }
 
-  if (order.notes.trim()) {
+  const noteBlock = (title: string, text: string) => {
     y += 44;
     ctx.textAlign = "left";
     ctx.font = `500 21px ${fonts.body}`;
     ctx.fillStyle = COLOR.muted;
-    ctx.fillText(order.category === "cake" ? "Design notes" : "Notes", PAD, y);
+    ctx.fillText(title, PAD, y);
     ctx.font = `400 22px ${fonts.body}`;
     ctx.fillStyle = COLOR.plum;
-    const lines = wrap(ctx, order.notes.trim(), innerWidth);
+    const lines = wrap(ctx, text, innerWidth);
     lines.forEach((line, i) => ctx.fillText(line, PAD, y + 32 + i * 30));
     y += 32 + (lines.length - 1) * 30;
-  }
+  };
+  if (order.cakeNotes.trim()) noteBlock("Cake design notes", order.cakeNotes.trim());
+  if (order.notes.trim()) noteBlock("Notes", order.notes.trim());
 
   y += 14;
   divider();
 
   row(delivery ? "Delivery to" : "Pickup", delivery ? order.address.trim() : "Arranged with us on WhatsApp");
-  row("Date and time", `${formatDate(order.date)}, ${slot?.label ?? ""}`);
+  row("Needed by", formatDate(order.date));
   row("Name", order.name.trim());
   row("Phone", order.phone.trim());
 
@@ -250,6 +251,7 @@ export async function createReceipt(order: Order, ref: string): Promise<{ blob: 
       year: "numeric",
       hour: "numeric",
       minute: "2-digit",
+      hour12: true,
     });
 
     // First pass measures the height, second pass draws on a canvas of exactly that size
