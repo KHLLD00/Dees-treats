@@ -3,7 +3,6 @@ import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { CATEGORIES, formatNaira } from "@/lib/menu";
 import { LEAD_HOURS } from "@/lib/schedule";
 import AboutSection from "@/components/AboutSection";
-import MenuSection from "@/components/MenuSection";
 import OrderSection from "@/components/OrderSection";
 import PhotosSection from "@/components/PhotosSection";
 
@@ -42,10 +41,10 @@ export default function Home() {
                 Order now
               </a>
               <a
-                href="#menu"
+                href="#photos"
                 className="rounded-full border-2 border-plum px-8 py-3.5 text-center text-lg font-semibold text-plum transition hover:bg-frosting-soft"
               >
-                See the menu
+                See photos
               </a>
             </div>
           </div>
@@ -73,7 +72,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-5 py-16 md:py-24">
         <h2 className="font-display text-4xl font-bold md:text-5xl">What we make</h2>
         <div className="mt-10 grid gap-12 md:grid-cols-[1.25fr_1fr] md:gap-10">
-          <a href="#menu" className="group block">
+          <a href="#order" className="group block">
             <Image
               src={cakePhoto.src}
               alt={cakePhoto.alt}
@@ -88,7 +87,7 @@ export default function Home() {
               From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_HOURS.cake} hours ahead.
             </p>
           </a>
-          <a href="#menu" className="group block md:mt-24">
+          <a href="#order" className="group block md:mt-24">
             <Image
               src={chopsPhoto.src}
               alt={chopsPhoto.alt}
@@ -106,8 +105,6 @@ export default function Home() {
           </a>
         </div>
       </section>
-
-      <MenuSection />
 
       <section className="mx-auto grid max-w-6xl scroll-mt-20 gap-10 px-5 py-16 md:grid-cols-[0.8fr_1.2fr] md:py-24">
         <div>
@@ -137,9 +134,10 @@ export default function Home() {
 
       <div aria-hidden className="gingham h-5" />
       <section id="order" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 md:py-24">
-        <h2 className="font-display text-5xl font-black md:text-6xl">Place your order</h2>
+        <h2 className="font-display text-5xl font-black md:text-6xl">Menu and order</h2>
         <p className="mt-4 max-w-[52ch] text-lg">
-          Pick your items and add your details. You get a receipt image to send to us on WhatsApp.
+          Every price is listed with its item. Pick what you want, add your details and get a receipt image to send us
+          on WhatsApp. We confirm the final price there.
         </p>
         <OrderSection />
       </section>

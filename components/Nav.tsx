@@ -1,7 +1,6 @@
 const LINKS = [
-  { href: "#menu", label: "Menu" },
   { href: "#photos", label: "Photos" },
-  { href: "#order", label: "Order" },
+  { href: "#order", label: "Menu & order" },
   { href: "#about", label: "About" },
 ];
 
@@ -32,7 +31,7 @@ export function MobileTabs() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 gap-1 border-t border-plum/15 bg-icing px-2 py-2 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 gap-1 border-t border-plum/15 bg-icing px-2 py-2 md:hidden"
     >
       {LINKS.map((link) => {
         const isOrder = link.href === "#order";
