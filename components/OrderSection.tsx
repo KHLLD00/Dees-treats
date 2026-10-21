@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { BUSINESS, CAKE_FLAVOURS, CAKE_SIZES, formatNaira, SMALL_CHOPS } from "@/lib/menu";
-import { emptyOrder, hasItems, receiptLines, orderTotal, whatsappUrl, type Order } from "@/lib/order";
+import { emptyOrder, hasItems, receiptLines, orderTotal, whatsappUrl, type Cake, type Order } from "@/lib/order";
 import { createReceipt, makeOrderRef } from "@/lib/receipt";
 import { isShortNotice, LEAD_NOTICE, todayValue } from "@/lib/schedule";
 
@@ -22,16 +22,9 @@ const subscribeToNothing = () => () => {};
 const getToday = () => todayValue();
 const getServerToday = () => "";
 
-type CakeDraft = { size: string; flavour: string; notes: string };
-const emptyDraft: CakeDraft = { size: "", flavour: "", notes: "" };
-
-function validate(order: Order, draft: CakeDraft): string {
-  if (draft.size || draft.flavour) {
-    return draft.size && draft.flavour
-      ? "Tap Add cake to order to include the cake you picked, or remove it."
-      : "Choose both a size and a flavour for your cake, then tap Add cake to order.";
-  }
+function validate(order: Order): string {
   if (!hasItems(order)) return "Pick a cake or at least one small chops pack.";
+  if (order.cakes.some((cake) => !cake.flavour)) return "Choose a flavour for each cake.";
   if (order.fulfilment === "delivery" && !order.address.trim()) return "Enter your delivery address.";
   if (!order.date) return "Pick the date you need it by.";
   if (order.date < todayValue()) return "Pick today or a later date.";
@@ -70,6 +63,43 @@ function Choice({
   );
 }
 
+function Stepper({
+  name,
+  quantity,
+  onAdd,
+  onRemove,
+}: {
+  name: string;
+  quantity: number;
+  onAdd: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-3">
+      <button
+        type="button"
+        aria-label={`Remove one ${name}`}
+        disabled={quantity === 0}
+        onClick={onRemove}
+        className="size-11 rounded-full border-2 border-cherry text-xl text-cherry disabled:opacity-30"
+      >
+        −
+      </button>
+      <span className="w-6 text-center text-lg font-semibold" aria-live="polite">
+        {quantity}
+      </span>
+      <button
+        type="button"
+        aria-label={`Add one ${name}`}
+        onClick={onAdd}
+        className="size-11 rounded-full border-2 border-cherry text-xl text-cherry"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 function Modal({ labelledBy, children }: { labelledBy: string; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-plum/50 p-4 backdrop-blur-[2px]">
@@ -87,7 +117,6 @@ function Modal({ labelledBy, children }: { labelledBy: string; children: ReactNo
 
 export default function OrderSection() {
   const [order, setOrder] = useState<Order>(emptyOrder);
-  const [draft, setDraft] = useState<CakeDraft>(emptyDraft);
   const nextCakeId = useRef(1);
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
@@ -96,6 +125,9 @@ export default function OrderSection() {
   const [confirmClear, setConfirmClear] = useState(false);
   const today = useSyncExternalStore(subscribeToNothing, getToday, getServerToday);
   const receiptRef = useRef<Receipt | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const summaryRef = useRef<HTMLElement>(null);
+  const [showBar, setShowBar] = useState(false);
 
   receiptRef.current = receipt;
 
@@ -126,32 +158,55 @@ export default function OrderSection() {
     };
   }, []);
 
+  // The cart bar shows on phones while the form is on screen but the summary is not
+  useEffect(() => {
+    const form = formRef.current;
+    const summary = summaryRef.current;
+    if (!form || !summary) return;
+    const visible = { form: false, summary: false };
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === form) visible.form = entry.isIntersecting;
+        else visible.summary = entry.isIntersecting;
+      }
+      setShowBar(visible.form && !visible.summary);
+    });
+    observer.observe(form);
+    observer.observe(summary);
+    return () => observer.disconnect();
+  }, []);
+
   function setQuantity(id: string, quantity: number) {
     update({ quantities: { ...order.quantities, [id]: Math.max(0, quantity) } });
   }
 
   function clearItems() {
     update({ cakes: [], quantities: {} });
-    setDraft(emptyDraft);
     setConfirmClear(false);
   }
 
-  function addCake() {
-    if (!draft.size || !draft.flavour) {
-      return setError("Choose both a size and a flavour for your cake, then tap Add cake to order.");
-    }
-    update({ cakes: [...order.cakes, { id: String(nextCakeId.current++), ...draft }] });
-    setDraft(emptyDraft);
+  // Every cake is its own line, so two cakes of one size can differ in flavour and design
+  function addCake(size: string) {
+    update({ cakes: [...order.cakes, { id: String(nextCakeId.current++), size, flavour: "", notes: "" }] });
   }
 
   function removeCake(id: string) {
     update({ cakes: order.cakes.filter((cake) => cake.id !== id) });
   }
 
+  function removeLastCake(size: string) {
+    const last = [...order.cakes].reverse().find((cake) => cake.size === size);
+    if (last) removeCake(last.id);
+  }
+
+  function updateCake(id: string, patch: Partial<Cake>) {
+    update({ cakes: order.cakes.map((cake) => (cake.id === id ? { ...cake, ...patch } : cake)) });
+  }
+
   async function review(e: React.FormEvent) {
     e.preventDefault();
     if (working) return;
-    const problem = validate(order, draft);
+    const problem = validate(order);
     if (problem) return setError(problem);
 
     setWorking(true);
@@ -195,18 +250,17 @@ export default function OrderSection() {
   function startNewOrder() {
     closeReceipt();
     setOrder(emptyOrder);
-    setDraft(emptyDraft);
     setError("");
   }
 
   const lines = receiptLines(order);
   const total = orderTotal(order);
   const delivery = order.fulfilment === "delivery";
-  const draftStarted = Boolean(draft.size || draft.flavour || draft.notes);
+  const itemCount = order.cakes.length + Object.values(order.quantities).reduce((sum, n) => sum + n, 0);
 
   return (
     <>
-      <form onSubmit={review} noValidate className="mt-10 grid items-start gap-10 md:grid-cols-[1.3fr_1fr] md:gap-12">
+      <form ref={formRef} onSubmit={review} noValidate className="mt-10 grid items-start gap-10 md:grid-cols-[1.3fr_1fr] md:gap-12">
         <div className="space-y-10">
           <fieldset>
             <legend className="mb-3 font-display text-2xl font-bold">How will you get it?</legend>
@@ -247,108 +301,89 @@ export default function OrderSection() {
 
           <div className="space-y-6">
             <h3 className="font-display text-2xl font-bold">Cakes</h3>
-            <p className="-mt-3">
-              Add as many cakes as you like, each with its own size, flavour and design.
-            </p>
+            <p className="-mt-3">Tap + for each cake you want. Every cake gets its own flavour and design notes.</p>
+
+            <div className="space-y-3">
+              {CAKE_SIZES.map((size) => (
+                <div
+                  key={size.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border-2 border-plum/40 bg-white px-4 py-3"
+                >
+                  <div>
+                    <p className="font-semibold">{size.label} cake</p>
+                    <p className="font-semibold text-cherry">{formatNaira(size.price)}</p>
+                  </div>
+                  <Stepper
+                    name={`${size.label} cake`}
+                    quantity={order.cakes.filter((cake) => cake.size === size.id).length}
+                    onAdd={() => addCake(size.id)}
+                    onRemove={() => removeLastCake(size.id)}
+                  />
+                </div>
+              ))}
+            </div>
 
             {order.cakes.length > 0 && (
-              <ul className="space-y-3">
-                {order.cakes.map((cake) => {
-                  const size = CAKE_SIZES.find((x) => x.id === cake.size);
-                  return (
-                    <li
-                      key={cake.id}
-                      className="flex items-start justify-between gap-3 rounded-lg border-2 border-cherry bg-frosting-soft px-4 py-3"
-                    >
-                      <div>
-                        <p className="font-semibold">
-                          {size?.label} {cake.flavour} cake{" "}
-                          <span className="text-cherry">{size ? formatNaira(size.price) : ""}</span>
-                        </p>
-                        {cake.notes.trim() && <p className="mt-0.5">Design notes: {cake.notes.trim()}</p>}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCake(cake.id)}
-                        aria-label={`Remove ${size?.label} ${cake.flavour} cake`}
-                        className="shrink-0 font-semibold underline underline-offset-4"
+              <div className="space-y-3">
+                <h4 className="font-display text-xl font-bold">Your cakes</h4>
+                <ul className="space-y-3">
+                  {order.cakes.map((cake, i) => {
+                    const size = CAKE_SIZES.find((x) => x.id === cake.size);
+                    return (
+                      <li
+                        key={cake.id}
+                        className="space-y-3 rounded-lg border-2 border-cherry bg-frosting-soft px-4 py-4"
                       >
-                        Remove
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            <div className="space-y-6 rounded-xl border-2 border-dashed border-plum/30 p-4 md:p-5">
-              <p className="font-display text-xl font-bold">
-                {order.cakes.length ? "Add another cake" : "Add a cake"}
-              </p>
-              <fieldset>
-                <legend className="mb-2 font-semibold">Size</legend>
-                <div className="grid grid-cols-2 gap-3">
-                  {CAKE_SIZES.map((size) => (
-                    <Choice
-                      key={size.id}
-                      name="size"
-                      value={size.id}
-                      checked={draft.size === size.id}
-                      onChange={(id) => {
-                        setDraft((d) => ({ ...d, size: id }));
-                        setError("");
-                      }}
-                    >
-                      <span className="font-semibold">{size.label}</span>
-                      <span className="font-semibold text-cherry">{formatNaira(size.price)}</span>
-                    </Choice>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="mb-2 font-semibold">Flavour</legend>
-                <div className="grid grid-cols-2 gap-3">
-                  {CAKE_FLAVOURS.map((flavour) => (
-                    <Choice
-                      key={flavour}
-                      name="flavour"
-                      value={flavour}
-                      checked={draft.flavour === flavour}
-                      onChange={(value) => {
-                        setDraft((d) => ({ ...d, flavour: value }));
-                        setError("");
-                      }}
-                    >
-                      <span className="font-medium">{flavour}</span>
-                    </Choice>
-                  ))}
-                </div>
-              </fieldset>
-              <label className="block">
-                <span className="mb-2 block font-semibold">Design notes (optional)</span>
-                <textarea
-                  rows={3}
-                  value={draft.notes}
-                  onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-                  placeholder="Colours, theme, message on the cake"
-                  className={inputClass}
-                />
-              </label>
-              <div className="flex flex-wrap items-center gap-4">
-                <button type="button" onClick={addCake} className={primaryButton}>
-                  Add cake to order
-                </button>
-                {draftStarted && (
-                  <button
-                    type="button"
-                    onClick={() => setDraft(emptyDraft)}
-                    className="font-semibold underline underline-offset-4"
-                  >
-                    Clear this cake
-                  </button>
-                )}
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="font-semibold">
+                            Cake {i + 1}: {size?.label}{" "}
+                            <span className="text-cherry">{size ? formatNaira(size.price) : ""}</span>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => removeCake(cake.id)}
+                            aria-label={`Remove cake ${i + 1}`}
+                            className="shrink-0 font-semibold underline underline-offset-4"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <label className="block">
+                          <span className="mb-1 block font-semibold">
+                            Flavour<span className="sr-only"> for cake {i + 1}</span>{" "}
+                            <span className="font-normal text-cherry">(required)</span>
+                          </span>
+                          <select
+                            value={cake.flavour}
+                            onChange={(e) => updateCake(cake.id, { flavour: e.target.value })}
+                            className={inputClass}
+                          >
+                            <option value="">Choose a flavour</option>
+                            {CAKE_FLAVOURS.map((flavour) => (
+                              <option key={flavour} value={flavour}>
+                                {flavour}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="block">
+                          <span className="mb-1 block font-semibold">
+                            Design notes<span className="sr-only"> for cake {i + 1}</span> (optional)
+                          </span>
+                          <textarea
+                            rows={2}
+                            value={cake.notes}
+                            onChange={(e) => updateCake(cake.id, { notes: e.target.value })}
+                            placeholder="Colours, theme, message on the cake"
+                            className={inputClass}
+                          />
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -377,28 +412,12 @@ export default function OrderSection() {
                       <p>{item.detail}</p>
                       <p className="font-semibold text-cherry">{formatNaira(item.price)}</p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <button
-                        type="button"
-                        aria-label={`Remove one ${item.name}`}
-                        disabled={quantity === 0}
-                        onClick={() => setQuantity(item.id, quantity - 1)}
-                        className="size-11 rounded-full border-2 border-cherry text-xl text-cherry disabled:opacity-30"
-                      >
-                        −
-                      </button>
-                      <span className="w-6 text-center text-lg font-semibold" aria-live="polite">
-                        {quantity}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={`Add one ${item.name}`}
-                        onClick={() => setQuantity(item.id, quantity + 1)}
-                        className="size-11 rounded-full border-2 border-cherry text-xl text-cherry"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <Stepper
+                      name={item.name}
+                      quantity={quantity}
+                      onAdd={() => setQuantity(item.id, quantity + 1)}
+                      onRemove={() => setQuantity(item.id, quantity - 1)}
+                    />
                   </div>
                 );
               })}
@@ -417,7 +436,7 @@ export default function OrderSection() {
           </label>
         </div>
 
-        <aside className="rounded-xl border-2 border-plum/20 bg-white md:sticky md:top-24">
+        <aside ref={summaryRef} className="scroll-mt-20 rounded-xl border-2 border-plum/20 bg-white md:sticky md:top-24">
           <div aria-hidden className="gingham h-3 rounded-t-[10px]" />
           <div className="p-5 md:p-6">
             <h3 className="font-display text-2xl font-bold">Order summary</h3>
@@ -502,6 +521,21 @@ export default function OrderSection() {
           </div>
         </aside>
       </form>
+
+      {showBar && itemCount > 0 && (
+        <div className="fixed inset-x-0 bottom-[4.1rem] z-20 border-t-2 border-plum/15 bg-icing px-3 py-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => summaryRef.current?.scrollIntoView()}
+            className={`${primaryButton} flex w-full items-center justify-between gap-3`}
+          >
+            <span>
+              {itemCount} {itemCount === 1 ? "item" : "items"} · {formatNaira(total)}
+            </span>
+            <span>View order</span>
+          </button>
+        </div>
+      )}
 
       {confirmClear && (
         <Modal labelledBy="clear-title">

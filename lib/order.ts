@@ -35,7 +35,7 @@ export function receiptLines(order: Order): ReceiptLine[] {
     const size = CAKE_SIZES.find((s) => s.id === cake.size);
     if (!size) continue;
     lines.push({
-      label: `${size.label} ${cake.flavour} cake`,
+      label: [size.label, cake.flavour, "cake"].filter(Boolean).join(" "),
       price: size.price,
       note: cake.notes.trim() || undefined,
     });
