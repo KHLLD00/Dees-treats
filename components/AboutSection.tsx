@@ -1,28 +1,22 @@
 import Image from "next/image";
-import Link from "next/link";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { BUSINESS, CAKE_FLAVOURS } from "@/lib/menu";
 import { LEAD_HOURS } from "@/lib/schedule";
-
-export const metadata = {
-  title: "About & FAQ | Dee's Treats",
-  description: "About Dee's Treats and answers to common ordering questions.",
-};
 
 const photo = photoByName("loaves-packed");
 
 const FAQ = [
   {
     q: "How far ahead should I order?",
-    a: `Cakes need ${LEAD_HOURS.cake} hours notice. Small chops need ${LEAD_HOURS["small-chops"]} hours. The order form only lets you pick dates that fit.`,
+    a: `Cakes need ${LEAD_HOURS.cake} hours notice. Small chops need ${LEAD_HOURS["small-chops"]} hours. Pick the date you need it by and we confirm it on WhatsApp.`,
   },
   {
     q: "How do I place an order?",
-    a: "Fill in the order form and tap send. It opens WhatsApp with your order already written out, and we confirm it there.",
+    a: "Fill in the order form and tap Review order. You get a receipt image. Tap Continue on WhatsApp, attach the receipt in the chat and send it. We confirm your order there.",
   },
   {
     q: "How and when do I pay?",
-    a: "We confirm your final price and payment details with you on WhatsApp after you send your order.",
+    a: "We confirm your final price and payment details with you on WhatsApp after you send your receipt.",
   },
   {
     q: "Do you deliver?",
@@ -30,7 +24,7 @@ const FAQ = [
   },
   {
     q: "Can I send a reference photo for my cake?",
-    a: "Yes. After your order message is sent, share any inspiration photos in the same WhatsApp chat.",
+    a: "Yes. After your receipt is sent, share any inspiration photos in the same WhatsApp chat.",
   },
   {
     q: "What cake flavours are available?",
@@ -42,12 +36,12 @@ const FAQ = [
   },
 ];
 
-export default function AboutPage() {
+export default function AboutSection() {
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12 md:py-16">
+    <section id="about" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 md:py-24">
       <div className="grid items-center gap-10 md:grid-cols-[1.2fr_0.8fr] md:gap-16">
         <div>
-          <h1 className="font-display text-5xl font-black md:text-7xl">About Dee&apos;s Treats</h1>
+          <h2 className="font-display text-5xl font-black md:text-6xl">About Dee&apos;s Treats</h2>
           <p className="mt-6 max-w-[48ch] text-lg md:text-xl">
             {BUSINESS.name} bakes custom cakes and small chops to order, from simple birthday cakes to party packs for
             a crowd. {BUSINESS.tagline}
@@ -62,7 +56,7 @@ export default function AboutPage() {
       </div>
 
       <div className="mt-20 max-w-3xl">
-        <h2 className="font-display text-4xl font-bold">FAQ</h2>
+        <h3 className="font-display text-4xl font-bold">FAQ</h3>
         <div className="mt-6 border-t-2 border-dotted border-plum/40">
           {FAQ.map((item) => (
             <details key={item.q} className="group border-b-2 border-dotted border-plum/40 py-5">
@@ -89,14 +83,14 @@ export default function AboutPage() {
             </a>
             .
           </p>
-          <Link
-            href="/order"
+          <a
+            href="#order"
             className="mt-5 inline-block rounded-full bg-cherry px-8 py-3.5 text-lg font-semibold text-white transition hover:bg-cherry-deep"
           >
             Start your order
-          </Link>
+          </a>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
