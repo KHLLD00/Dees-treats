@@ -92,7 +92,7 @@ export default function Home() {
               src={chopsPhoto.src}
               alt={chopsPhoto.alt}
               {...PHOTO_SIZE}
-              className="aspect-square w-full rounded-xl object-cover"
+              className="aspect-[4/5] w-full rounded-xl object-cover"
             />
             <h3 className="mt-5 font-display text-3xl font-bold group-hover:underline group-hover:decoration-cherry group-hover:decoration-[3px] group-hover:underline-offset-8">
               {CATEGORIES["small-chops"].label}
