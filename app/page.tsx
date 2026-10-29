@@ -71,7 +71,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-5 py-16 md:py-24">
         <h2 className="font-display text-4xl font-bold md:text-5xl">What we make</h2>
-        <div className="mt-10 grid gap-12 md:grid-cols-[1.25fr_1fr] md:gap-10">
+        <div className="mt-10 grid gap-10 md:grid-cols-2">
           <a href="#order" className="group block">
             <Image
               src={cakePhoto.src}
@@ -87,7 +87,7 @@ export default function Home() {
               From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_NOTICE} ahead.
             </p>
           </a>
-          <a href="#order" className="group block md:mt-24">
+          <a href="#order" className="group block">
             <Image
               src={chopsPhoto.src}
               alt={chopsPhoto.alt}
