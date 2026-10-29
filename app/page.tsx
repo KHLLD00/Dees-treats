@@ -15,7 +15,7 @@ const STEPS = [
 
 const hero = photoByName("cake-crown");
 const cakePhoto = photoByName("cake-pink-flowers");
-const chopsPhoto = photoByName("chops-foil-box");
+const chopsPhoto = photoByName("chops-bowl");
 
 export default function Home() {
   return (
