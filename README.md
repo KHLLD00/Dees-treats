@@ -40,6 +40,7 @@ Customers can build their order, choose pickup or delivery, add custom cake deta
 - [React](https://react.dev/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.com/) for menu prices and availability
 
 ## How Ordering Works
 
@@ -82,6 +83,19 @@ public/
   gallery/            # Food and product images
 ```
 
+## Supabase Menu Setup
+
+The public menu is loaded from Supabase. If Supabase is unavailable or the environment variables are missing, the website uses the menu defaults in `lib/menu.ts` so customers can still place orders.
+
+Create a `.env.local` file in the project root with:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+```
+
+Use the project URL and publishable key from the Supabase project settings. Never put the service-role key in a `NEXT_PUBLIC_` variable or in frontend code.
+
 ## Running Locally
 
 ### 1. Clone the repository
@@ -121,11 +135,7 @@ npm run lint     # Run ESLint
 
 ## Updating Business and Menu Information
 
-The current business details and menu items are managed in:
-
-```text
-lib/menu.ts
-```
+Business details and cake flavours remain in `lib/menu.ts`. Menu prices and item availability are read from the Supabase `cake_sizes` and `small_chops` tables. The values in `lib/menu.ts` are used as a safe fallback if Supabase cannot be reached.
 
 This includes:
 
