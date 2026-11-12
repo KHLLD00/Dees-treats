@@ -96,6 +96,14 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 
 Use the project URL and publishable key from the Supabase project settings. Never put the service-role key in a `NEXT_PUBLIC_` variable or in frontend code.
 
+## Admin Dashboard
+
+The admin dashboard is available at `/admin`. It allows the designated administrator to update cake and small-chops prices and switch existing items on or off.
+
+Only the account for `sakinahaliyu5050@gmail.com` is authorised. Public sign-up is not provided. The first administrator account must be invited from **Supabase Dashboard → Authentication → Users → Invite user** using that exact email address. The administrator then sets their password through Supabase's invitation email and signs in at `/admin/login`.
+
+Menu updates are protected twice: the admin route verifies the signed-in Supabase user, and Supabase row-level security only permits that designated email to update the permitted menu columns. The service-role key is not used by the website.
+
 ## Running Locally
 
 ### 1. Clone the repository
