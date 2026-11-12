@@ -214,7 +214,7 @@ export default function OrderSection({ menu }: { menu: MenuData }) {
 
     setWorking(true);
     const ref = makeOrderRef();
-    const made = await createReceipt(order, ref);
+    const made = await createReceipt(order, ref, menu);
     setWorking(false);
     if (!made) {
       // No image: send the full written order to WhatsApp instead
