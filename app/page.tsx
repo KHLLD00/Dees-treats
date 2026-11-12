@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Suspense } from "react";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
 import { formatNaira, getCategories } from "@/lib/menu";
 import { fetchMenuData } from "@/lib/menu-data";
@@ -18,7 +19,7 @@ const hero = photoByName("cake-crown");
 const cakePhoto = photoByName("cake-pink-flowers");
 const chopsPhoto = photoByName("chops-bowl");
 
-export default async function Home() {
+async function HomeContent() {
   const menu = await fetchMenuData();
   const categories = getCategories(menu);
 
@@ -148,5 +149,20 @@ export default async function Home() {
       <PhotosSection />
       <AboutSection />
     </>
+  );
+}
+
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-5 text-center">
+          <p className="font-display text-2xl font-bold text-plum">Preparing the menu...</p>
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }
