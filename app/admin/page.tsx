@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+
+export const instant = false;
 import { logout, saveMenuItem } from "./actions";
 import { getAdminSession, supabaseConfig } from "@/lib/supabase-auth";
 
