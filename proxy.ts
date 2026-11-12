@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseConfig } from "@/lib/supabase-auth";
 
 const ADMIN_EMAIL = "sakinahaliyu5050@gmail.com";
 const ACCESS_COOKIE = "dees_admin_access";
@@ -10,8 +9,10 @@ export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
   if (!accessToken) return clearAndRedirect(request);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return clearAndRedirect(request);
 
-  const { url, key } = supabaseConfig();
   let token = accessToken;
   let userResponse = await fetch(url + "/auth/v1/user", {
     headers: { apikey: key, Authorization: "Bearer " + token }, cache: "no-store",
@@ -36,7 +37,11 @@ export async function proxy(request: NextRequest) {
   const user = await userResponse.json() as { email?: string };
   if (user.email?.toLowerCase() !== ADMIN_EMAIL) return clearAndRedirect(request);
 
-  const response = NextResponse.next();
+  if (refreshed?.access_token && refreshed.refresh_token) {
+    request.cookies.set(ACCESS_COOKIE, refreshed.access_token);
+    request.cookies.set(REFRESH_COOKIE, refreshed.refresh_token);
+  }
+  const response = NextResponse.next({ request });
   if (refreshed?.access_token && refreshed.refresh_token) {
     const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
     response.cookies.set(ACCESS_COOKIE, refreshed.access_token, { ...options, maxAge: refreshed.expires_in ?? 3600 });
