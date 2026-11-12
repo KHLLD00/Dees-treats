@@ -1,5 +1,9 @@
 export type Category = "cake" | "small-chops";
 
+export type CakeSize = { id: string; label: string; price: number };
+export type SmallChop = { id: string; name: string; detail: string; price: number };
+export type MenuData = { cakeSizes: CakeSize[]; smallChops: SmallChop[] };
+
 export const BUSINESS = {
   name: "Dee's Treats",
   tagline: "Treat yourself right with Dee's!",
@@ -52,4 +56,17 @@ export const CATEGORIES = {
 
 export function formatNaira(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
+}
+
+export function getCategories(menu: MenuData) {
+  return {
+    cake: {
+      ...CATEGORIES.cake,
+      startingPrice: Math.min(...menu.cakeSizes.map((item) => item.price)),
+    },
+    "small-chops": {
+      ...CATEGORIES["small-chops"],
+      startingPrice: Math.min(...menu.smallChops.map((item) => item.price)),
+    },
+  };
 }
