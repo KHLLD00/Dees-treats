@@ -1,4 +1,4 @@
-import { BUSINESS, formatNaira } from "./menu";
+import { BUSINESS, formatNaira, type MenuData } from "./menu";
 import { orderTotal, receiptLines, type Order } from "./order";
 import { formatDate } from "./schedule";
 
@@ -91,6 +91,7 @@ function draw(
   when: string,
   fonts: Fonts,
   logo: HTMLImageElement | null,
+  menu: MenuData,
 ) {
   const delivery = order.fulfilment === "delivery";
   const innerWidth = WIDTH - PAD * 2;
@@ -153,7 +154,7 @@ function draw(
   ctx.fillText("Your order", PAD, y);
   y += 20;
 
-  for (const item of receiptLines(order)) {
+  for (const item of receiptLines(order, menu)) {
     y += 30;
     const price = formatNaira(item.price);
     ctx.font = `700 26px ${fonts.display}`;
@@ -215,7 +216,7 @@ function draw(
   ctx.fillText("Estimated total", PAD + 24, y + 52);
   ctx.textAlign = "right";
   ctx.font = `900 36px ${fonts.display}`;
-  ctx.fillText(formatNaira(orderTotal(order)), WIDTH - PAD - 24, y + 54);
+  ctx.fillText(formatNaira(orderTotal(order, menu)), WIDTH - PAD - 24, y + 54);
   y += 84 + 34;
 
   ctx.textAlign = "left";
@@ -235,7 +236,7 @@ function draw(
   return y + BAND;
 }
 
-export async function createReceipt(order: Order, ref: string): Promise<{ blob: Blob; url: string } | null> {
+export async function createReceipt(order: Order, ref: string, menu: MenuData): Promise<{ blob: Blob; url: string } | null> {
   try {
     const fonts: Fonts = {
       display: fontFamily("--font-fraunces", "Georgia, serif"),
@@ -266,14 +267,14 @@ export async function createReceipt(order: Order, ref: string): Promise<{ blob: 
     const probe = document.createElement("canvas");
     probe.width = WIDTH;
     probe.height = 6000;
-    const height = draw(probe.getContext("2d")!, order, ref, when, fonts, logo);
+    const height = draw(probe.getContext("2d")!, order, ref, when, fonts, logo, menu);
 
     const canvas = document.createElement("canvas");
     canvas.width = WIDTH * SCALE;
     canvas.height = Math.ceil(height) * SCALE;
     const ctx = canvas.getContext("2d")!;
     ctx.scale(SCALE, SCALE);
-    draw(ctx, order, ref, when, fonts, logo);
+    draw(ctx, order, ref, when, fonts, logo, menu);
 
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
     return blob ? { blob, url: URL.createObjectURL(blob) } : null;
