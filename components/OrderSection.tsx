@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { BUSINESS, CAKE_FLAVOURS, CAKE_SIZES, formatNaira, SMALL_CHOPS } from "@/lib/menu";
+import { BUSINESS, CAKE_FLAVOURS, formatNaira, type MenuData } from "@/lib/menu";
 import { emptyOrder, hasItems, receiptLines, orderTotal, whatsappUrl, type Cake, type Order } from "@/lib/order";
 import { createReceipt, makeOrderRef } from "@/lib/receipt";
 import { isShortNotice, LEAD_NOTICE, todayValue } from "@/lib/schedule";
@@ -22,8 +22,8 @@ const subscribeToNothing = () => () => {};
 const getToday = () => todayValue();
 const getServerToday = () => "";
 
-function validate(order: Order): string {
-  if (!hasItems(order)) return "Pick a cake or at least one small chops pack.";
+function validate(order: Order, menu: MenuData): string {
+  if (!hasItems(order, menu)) return "Pick a cake or at least one small chops pack.";
   if (order.cakes.some((cake) => !cake.flavour)) return "Choose a flavour for each cake.";
   if (order.fulfilment === "delivery" && !order.address.trim()) return "Enter your delivery address.";
   if (!order.date) return "Pick the date you need it by.";
@@ -118,7 +118,7 @@ function Modal({ labelledBy, children }: { labelledBy: string; children: ReactNo
   );
 }
 
-export default function OrderSection() {
+export default function OrderSection({ menu }: { menu: MenuData }) {
   const [order, setOrder] = useState<Order>(emptyOrder);
   const nextCakeId = useRef(1);
   const [error, setError] = useState("");
@@ -209,16 +209,16 @@ export default function OrderSection() {
   async function review(e: React.FormEvent) {
     e.preventDefault();
     if (working) return;
-    const problem = validate(order);
+    const problem = validate(order, menu);
     if (problem) return setError(problem);
 
     setWorking(true);
     const ref = makeOrderRef();
-    const made = await createReceipt(order, ref);
+    const made = await createReceipt(order, ref, menu);
     setWorking(false);
     if (!made) {
       // No image: send the full written order to WhatsApp instead
-      window.open(whatsappUrl(order, ref, false), "_blank", "noopener,noreferrer");
+      window.open(whatsappUrl(order, ref, false, menu), "_blank", "noopener,noreferrer");
       setError("We could not make your receipt image, so your full order was written out in WhatsApp. Tap send there.");
       return;
     }
@@ -239,7 +239,7 @@ export default function OrderSection() {
   function continueOnWhatsApp() {
     if (!receipt) return;
     saveReceipt(receipt);
-    window.open(whatsappUrl(order, receipt.ref, true), "_blank", "noopener,noreferrer");
+    window.open(whatsappUrl(order, receipt.ref, true, menu), "_blank", "noopener,noreferrer");
     setHandedOff(true);
   }
 
@@ -256,8 +256,8 @@ export default function OrderSection() {
     setError("");
   }
 
-  const lines = receiptLines(order);
-  const total = orderTotal(order);
+  const lines = receiptLines(order, menu);
+  const total = orderTotal(order, menu);
   const delivery = order.fulfilment === "delivery";
   const itemCount = order.cakes.length + Object.values(order.quantities).reduce((sum, n) => sum + n, 0);
 
@@ -307,7 +307,7 @@ export default function OrderSection() {
             <p className="-mt-3">Tap + for each cake you want. Every cake gets its own flavour and design notes.</p>
 
             <div className="space-y-3">
-              {CAKE_SIZES.map((size) => (
+              {menu.cakeSizes.map((size) => (
                 <div
                   key={size.id}
                   className="flex items-center justify-between gap-3 rounded-lg border-2 border-plum/40 bg-white px-4 py-3"
@@ -331,7 +331,7 @@ export default function OrderSection() {
                 <h4 className="font-display text-xl font-bold">Your cakes</h4>
                 <ul className="space-y-3">
                   {order.cakes.map((cake, i) => {
-                    const size = CAKE_SIZES.find((x) => x.id === cake.size);
+                    const size = menu.cakeSizes.find((x) => x.id === cake.size);
                     return (
                       <li
                         key={cake.id}
@@ -403,7 +403,7 @@ export default function OrderSection() {
               )}
             </div>
             <div className="space-y-3">
-              {SMALL_CHOPS.map((item) => {
+              {menu.smallChops.map((item) => {
                 const quantity = order.quantities[item.id] ?? 0;
                 return (
                   <div

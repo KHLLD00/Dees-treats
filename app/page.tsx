@@ -1,6 +1,8 @@
 import Image from "next/image";
+import { Suspense } from "react";
 import { PHOTO_SIZE, photoByName } from "@/lib/gallery";
-import { CATEGORIES, formatNaira } from "@/lib/menu";
+import { formatNaira, getCategories } from "@/lib/menu";
+import { fetchMenuData } from "@/lib/menu-data";
 import { LEAD_NOTICE } from "@/lib/schedule";
 import AboutSection from "@/components/AboutSection";
 import OrderSection from "@/components/OrderSection";
@@ -17,7 +19,10 @@ const hero = photoByName("cake-crown");
 const cakePhoto = photoByName("cake-pink-flowers");
 const chopsPhoto = photoByName("chops-bowl");
 
-export default function Home() {
+async function HomeContent() {
+  const menu = await fetchMenuData();
+  const categories = getCategories(menu);
+
   return (
     <>
       <section className="bg-frosting">
@@ -54,7 +59,7 @@ export default function Home() {
               <span aria-hidden className="h-6 w-0.5 bg-plum" />
               <div className="-mt-px rounded-md bg-apricot px-4 py-2 text-center shadow-md">
                 <p className="text-sm font-semibold">Cakes from</p>
-                <p className="font-display text-2xl font-bold">{formatNaira(CATEGORIES.cake.startingPrice)}</p>
+                <p className="font-display text-2xl font-bold">{formatNaira(categories.cake.startingPrice)}</p>
               </div>
             </div>
             <Image
@@ -80,11 +85,11 @@ export default function Home() {
               className="aspect-[4/5] w-full rounded-xl object-cover"
             />
             <h3 className="mt-5 font-display text-3xl font-bold group-hover:underline group-hover:decoration-cherry group-hover:decoration-[3px] group-hover:underline-offset-8">
-              {CATEGORIES.cake.label}
+              {categories.cake.label}
             </h3>
-            <p className="mt-1 text-lg">{CATEGORIES.cake.blurb}.</p>
+            <p className="mt-1 text-lg">{categories.cake.blurb}.</p>
             <p className="mt-2 font-semibold text-cherry">
-              From {formatNaira(CATEGORIES.cake.startingPrice)}. Order {LEAD_NOTICE} ahead.
+              From {formatNaira(categories.cake.startingPrice)}. Order {LEAD_NOTICE} ahead.
             </p>
           </a>
           <a href="#order" className="group block">
@@ -95,11 +100,11 @@ export default function Home() {
               className="aspect-[4/5] w-full rounded-xl object-cover"
             />
             <h3 className="mt-5 font-display text-3xl font-bold group-hover:underline group-hover:decoration-cherry group-hover:decoration-[3px] group-hover:underline-offset-8">
-              {CATEGORIES["small-chops"].label}
+              {categories["small-chops"].label}
             </h3>
-            <p className="mt-1 text-lg">{CATEGORIES["small-chops"].blurb}.</p>
+            <p className="mt-1 text-lg">{categories["small-chops"].blurb}.</p>
             <p className="mt-2 font-semibold text-cherry">
-              From {formatNaira(CATEGORIES["small-chops"].startingPrice)}. Order {LEAD_NOTICE} ahead.
+              From {formatNaira(categories["small-chops"].startingPrice)}. Order {LEAD_NOTICE} ahead.
             </p>
           </a>
         </div>
@@ -138,11 +143,26 @@ export default function Home() {
           Every price is listed with its item. Pick what you want, add your details and get a receipt image to send us
           on WhatsApp. We confirm the final price there.
         </p>
-        <OrderSection />
+        <OrderSection menu={menu} />
       </section>
 
       <PhotosSection />
       <AboutSection />
     </>
+  );
+}
+
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-5 text-center">
+          <p className="font-display text-2xl font-bold text-plum">Preparing the menu...</p>
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }
