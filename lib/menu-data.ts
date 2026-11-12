@@ -1,14 +1,35 @@
-import { CAKE_SIZES, SMALL_CHOPS, type MenuData } from "./menu";
+import {
+  CAKE_SIZES,
+  SMALL_CHOPS,
+  type CakeSize,
+  type MenuData,
+  type SmallChop,
+} from "./menu";
 
 const fallbackMenu: MenuData = {
   cakeSizes: CAKE_SIZES,
   smallChops: SMALL_CHOPS,
 };
 
-function isValidRows<T extends { id: string; price: number }>(rows: unknown): rows is T[] {
-  return Array.isArray(rows) && rows.length > 0 && rows.every(
-    (row) => row && typeof row.id === "string" && typeof row.price === "number",
-  );
+function isCakeRows(rows: unknown): rows is CakeSize[] {
+  return Array.isArray(rows) && rows.length > 0 && rows.every((row: unknown) => {
+    if (!row || typeof row !== "object") return false;
+    const item = row as Record<string, unknown>;
+    return typeof item.id === "string" && typeof item.label === "string" && typeof item.price === "number";
+  });
+}
+
+function isSmallChopsRows(rows: unknown): rows is SmallChop[] {
+  return Array.isArray(rows) && rows.length > 0 && rows.every((row: unknown) => {
+    if (!row || typeof row !== "object") return false;
+    const item = row as Record<string, unknown>;
+    return (
+      typeof item.id === "string" &&
+      typeof item.name === "string" &&
+      typeof item.detail === "string" &&
+      typeof item.price === "number"
+    );
+  });
 }
 
 export async function fetchMenuData(): Promise<MenuData> {
@@ -17,10 +38,7 @@ export async function fetchMenuData(): Promise<MenuData> {
 
   if (!url || !key) return fallbackMenu;
 
-  const headers = {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-  };
+  const headers = { apikey: key };
 
   try {
     const [cakesResponse, chopsResponse] = await Promise.all([
@@ -41,14 +59,7 @@ export async function fetchMenuData(): Promise<MenuData> {
       chopsResponse.json(),
     ]);
 
-    if (!isValidRows(cakeSizes) || !cakeSizes.every((item) => typeof item.label === "string")) {
-      return fallbackMenu;
-    }
-    if (!isValidRows(smallChops) || !smallChops.every(
-      (item) => typeof item.name === "string" && typeof item.detail === "string",
-    )) {
-      return fallbackMenu;
-    }
+    if (!isCakeRows(cakeSizes) || !isSmallChopsRows(smallChops)) return fallbackMenu;
 
     return { cakeSizes, smallChops };
   } catch {
