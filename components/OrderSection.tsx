@@ -29,7 +29,10 @@ function validate(order: Order): string {
   if (!order.date) return "Pick the date you need it by.";
   if (order.date < todayValue()) return "Pick today or a later date.";
   if (!order.name.trim()) return "Enter your name.";
-  if (!/^\+?[0-9\s-]{10,15}$/.test(order.phone.trim())) return "Enter a valid phone number.";
+
+  const phone = order.phone.replace(/[\s-]/g, "").replace(/^\+/, "");
+  const isNigerianMobile = /^(?:0[789]\d{9}|234[789]\d{9})$/.test(phone);
+  if (!isNigerianMobile) return "Enter a valid Nigerian mobile number.";
   return "";
 }
 
