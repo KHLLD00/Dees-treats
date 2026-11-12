@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
     });
     if (refreshResponse.ok) {
       refreshed = await refreshResponse.json();
-      if (refreshed.access_token) {
+      if (refreshed && refreshed.access_token) {
         token = refreshed.access_token;
         userResponse = await fetch(url + "/auth/v1/user", {
           headers: { apikey: key, Authorization: "Bearer " + token }, cache: "no-store",
@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
   const user = await userResponse.json() as { email?: string };
   if (user.email?.toLowerCase() !== ADMIN_EMAIL) return clearAndRedirect(request);
 
-  if (refreshed?.access_token && refreshed.refresh_token) {
+  if (refreshed && refreshed.access_token && refreshed.refresh_token) {
     request.cookies.set(ACCESS_COOKIE, refreshed.access_token);
     request.cookies.set(REFRESH_COOKIE, refreshed.refresh_token);
   }
