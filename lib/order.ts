@@ -1,4 +1,4 @@
-import { BUSINESS, CAKE_SIZES, formatNaira, SMALL_CHOPS } from "./menu";
+import { BUSINESS, formatNaira, type MenuData } from "./menu";
 import { formatDate } from "./schedule";
 
 // One order can hold any number of cakes (each with its own size, flavour and design
@@ -29,10 +29,10 @@ export const emptyOrder: Order = {
 
 export type ReceiptLine = { label: string; price: number; note?: string };
 
-export function receiptLines(order: Order): ReceiptLine[] {
+export function receiptLines(order: Order, menu: MenuData): ReceiptLine[] {
   const lines: ReceiptLine[] = [];
   for (const cake of order.cakes) {
-    const size = CAKE_SIZES.find((s) => s.id === cake.size);
+    const size = menu.cakeSizes.find((s) => s.id === cake.size);
     if (!size) continue;
     lines.push({
       label: [size.label, cake.flavour, "cake"].filter(Boolean).join(" "),
@@ -40,28 +40,28 @@ export function receiptLines(order: Order): ReceiptLine[] {
       note: cake.notes.trim() || undefined,
     });
   }
-  for (const item of SMALL_CHOPS) {
+  for (const item of menu.smallChops) {
     const quantity = order.quantities[item.id] ?? 0;
     if (quantity > 0) lines.push({ label: `${quantity} x ${item.name}`, price: item.price * quantity });
   }
   return lines;
 }
 
-export function orderTotal(order: Order) {
-  return receiptLines(order).reduce((sum, line) => sum + line.price, 0);
+export function orderTotal(order: Order, menu: MenuData) {
+  return receiptLines(order, menu).reduce((sum, line) => sum + line.price, 0);
 }
 
-export function hasItems(order: Order) {
-  return receiptLines(order).length > 0;
+export function hasItems(order: Order, menu: MenuData) {
+  return receiptLines(order, menu).length > 0;
 }
 
 // The plain-text order. Only used if the receipt image could not be made.
-export function buildMessage(order: Order, ref: string) {
+export function buildMessage(order: Order, ref: string, menu: MenuData) {
   const lines = [
     `Hello ${BUSINESS.name}, I'd like to place an order.`,
     `Order ref: ${ref}`,
     "",
-    ...receiptLines(order).flatMap((line) => [
+    ...receiptLines(order, menu).flatMap((line) => [
       `${line.label} (${formatNaira(line.price)})`,
       ...(line.note ? [`   Design notes: ${line.note}`] : []),
     ]),
@@ -75,15 +75,15 @@ export function buildMessage(order: Order, ref: string) {
     `Name: ${order.name.trim()}`,
     `Phone: ${order.phone.trim()}`,
     "",
-    `Estimated total: ${formatNaira(orderTotal(order))}${order.fulfilment === "delivery" ? " (delivery fee not included)" : ""}`,
+    `Estimated total: ${formatNaira(orderTotal(order, menu))}${order.fulfilment === "delivery" ? " (delivery fee not included)" : ""}`,
   );
   return lines.join("\n");
 }
 
 // With a receipt image the chat opens with one short line; the image carries the details.
-export function whatsappUrl(order: Order, ref: string, receiptMade: boolean) {
+export function whatsappUrl(order: Order, ref: string, receiptMade: boolean, menu: MenuData) {
   const text = receiptMade
     ? `Hello ${BUSINESS.name}, here is my order receipt. Order ref: ${ref}`
-    : buildMessage(order, ref);
+    : buildMessage(order, ref, menu);
   return `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(text)}`;
 }
