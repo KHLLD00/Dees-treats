@@ -142,7 +142,9 @@ export async function deleteMenuItem(formData: FormData) {
   const table = validTable(formData.get("table"));
   const id = cleanText(formData.get("id"));
 
+  const confirmed = formData.get("confirm_delete") === "on";
   if (!table || !id) adminRedirect("Invalid menu item.");
+  if (!confirmed) adminRedirect("Please confirm before removing a menu item.");
 
   const response = await menuRequest(
     table + "?id=eq." + encodeURIComponent(id),
