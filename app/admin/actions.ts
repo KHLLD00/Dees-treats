@@ -17,7 +17,7 @@ function validPrice(value: FormDataEntryValue | null) {
 
 function validTable(value: FormDataEntryValue | null): "cake_sizes" | "small_chops" | null {
   const table = String(value ?? "");
-  return menuTable === "cake_sizes" || table === "small_chops" ? table : null;
+  return table === "cake_sizes" || table === "small_chops" ? table : null;
 }
 
 async function menuRequest(path: string, options: RequestInit = {}) {
@@ -74,7 +74,7 @@ export async function saveMenuItem(formData: FormData) {
 
   const payload: Record<string, unknown> = { price, active };
 
-  if (menuTable === "cake_sizes") {
+  if (table === "cake_sizes") {
     const label = cleanText(formData.get("label"));
     if (!label) adminRedirect("Cake name is required.");
     payload.label = label;
