@@ -72,11 +72,13 @@ function MenuEditor({
         </div>
       </form>
 
-      <form action={deleteMenuItem} className="mt-3" onSubmit={(event) => {
-        if (!confirm("Remove this menu item permanently?")) event.preventDefault();
-      }}>
+      <form action={deleteMenuItem} className="mt-3 flex flex-wrap items-center gap-3">
         <input type="hidden" name="table" value={table} />
         <input type="hidden" name="id" value={id} />
+        <label className="flex items-center gap-2 text-sm">
+          <input name="confirm_delete" type="checkbox" className="size-4" />
+          Confirm permanent removal
+        </label>
         <button type="submit" className="text-sm font-semibold text-red-700 underline underline-offset-4">
           Remove item
         </button>
