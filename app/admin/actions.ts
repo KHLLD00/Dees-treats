@@ -17,7 +17,7 @@ function validPrice(value: FormDataEntryValue | null) {
 
 function validTable(value: FormDataEntryValue | null): "cake_sizes" | "small_chops" | null {
   const table = String(value ?? "");
-  return table === "cake_sizes" || table === "small_chops" ? table : null;
+  return menuTable === "cake_sizes" || table === "small_chops" ? table : null;
 }
 
 async function menuRequest(path: string, options: RequestInit = {}) {
@@ -74,7 +74,7 @@ export async function saveMenuItem(formData: FormData) {
 
   const payload: Record<string, unknown> = { price, active };
 
-  if (table === "cake_sizes") {
+  if (menuTable === "cake_sizes") {
     const label = cleanText(formData.get("label"));
     if (!label) adminRedirect("Cake name is required.");
     payload.label = label;
@@ -104,31 +104,33 @@ export async function addMenuItem(formData: FormData) {
   const price = validPrice(formData.get("price"));
   const active = formData.get("active") === "on";
 
-  if (!table || price === null) adminRedirect("Please enter a valid menu item and price.");
+  if (!table || price === null) {
+    adminRedirect("Please enter a valid menu item and price.");
+    return;
+  }
 
+  const menuTable = table;
   const payload: Record<string, unknown> = { price, active };
 
-  if (table === "cake_sizes") {
+  if (menuTable === "cake_sizes") {
     const label = cleanText(formData.get("label"));
     if (!label) adminRedirect("Cake name is required.");
-    payload.id = crypto.randomUUID();
     payload.label = label;
   } else {
     const name = cleanText(formData.get("name"));
     const detail = cleanText(formData.get("detail"));
     if (!name || !detail) adminRedirect("Small chops name and description are required.");
-    payload.id = crypto.randomUUID();
     payload.name = name;
     payload.detail = detail;
   }
 
-  const orderResponse = await menuRequest(table + "?select=sort_order&order=sort_order.desc&limit=1");
+  const orderResponse = await menuRequest(menuTable + "?select=sort_order&order=sort_order.desc&limit=1");
   if (!orderResponse.ok) adminRedirect("Could not prepare the new menu item.");
 
   const rows = await orderResponse.json() as Array<{ sort_order: number }>;
   payload.sort_order = (rows[0]?.sort_order ?? -1) + 1;
 
-  const response = await menuRequest(table, {
+  const response = await menuRequest(menuTable, {
     method: "POST",
     headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify(payload),
