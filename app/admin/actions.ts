@@ -3,12 +3,45 @@
 import { redirect } from "next/navigation";
 import { clearAdminSession, getAdminSession, setAdminSession, supabaseConfig } from "@/lib/supabase-auth";
 
+const adminRedirect = (message: string) => redirect("/admin?error=" + encodeURIComponent(message));
+const successRedirect = (message: string) => redirect("/admin?saved=" + encodeURIComponent(message));
+
+function cleanText(value: FormDataEntryValue | null) {
+  return String(value ?? "").trim();
+}
+
+function validPrice(value: FormDataEntryValue | null) {
+  const price = Number(value);
+  return Number.isSafeInteger(price) && price >= 0 ? price : null;
+}
+
+function validTable(value: FormDataEntryValue | null): "cake_sizes" | "small_chops" | null {
+  const table = String(value ?? "");
+  return table === "cake_sizes" || table === "small_chops" ? table : null;
+}
+
+async function menuRequest(path: string, options: RequestInit = {}) {
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const { url, key } = supabaseConfig();
+  return fetch(url + "/rest/v1/" + path, {
+    ...options,
+    headers: {
+      apikey: key,
+      Authorization: "Bearer " + session.accessToken,
+      ...(options.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+}
+
 export async function login(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const email = cleanText(formData.get("email")).toLowerCase();
+  const password = cleanText(formData.get("password"));
   if (email !== "sakinahaliyu5050@gmail.com" || !password) {
     redirect("/admin/login?error=Check%20your%20admin%20email%20and%20password.");
   }
+
   const { url, key } = supabaseConfig();
   const response = await fetch(url + "/auth/v1/token?grant_type=password", {
     method: "POST",
@@ -17,9 +50,11 @@ export async function login(formData: FormData) {
     cache: "no-store",
   });
   const result = await response.json();
+
   if (!response.ok || !result.access_token || !result.refresh_token) {
-    redirect("/admin/login?error=Sign-in%20failed.%20Check%20your%20password%20or%20ask%20the%20site%20owner%20to%20invite%20your%20account.");
+    redirect("/admin/login?error=Sign-in%20failed.%20Check%20your%20password.");
   }
+
   await setAdminSession(result.access_token, result.refresh_token, result.expires_in ?? 3600);
   redirect("/admin");
 }
@@ -30,27 +65,90 @@ export async function logout() {
 }
 
 export async function saveMenuItem(formData: FormData) {
-  const session = await getAdminSession();
-  if (!session) redirect("/admin/login");
-  const table = String(formData.get("table") ?? "");
-  const id = String(formData.get("id") ?? "");
-  const price = Number(formData.get("price"));
+  const table = validTable(formData.get("table"));
+  const id = cleanText(formData.get("id"));
+  const price = validPrice(formData.get("price"));
   const active = formData.get("active") === "on";
-  if (!["cake_sizes", "small_chops"].includes(table) || !id || !Number.isSafeInteger(price) || price < 0) {
-    redirect("/admin?error=Please%20enter%20a%20valid%20price.");
+
+  if (!table || !id || price === null) adminRedirect("Please enter a valid price.");
+
+  const payload: Record<string, unknown> = { price, active };
+
+  if (table === "cake_sizes") {
+    const label = cleanText(formData.get("label"));
+    if (!label) adminRedirect("Cake name is required.");
+    payload.label = label;
+  } else {
+    const name = cleanText(formData.get("name"));
+    const detail = cleanText(formData.get("detail"));
+    if (!name || !detail) adminRedirect("Small chops name and description are required.");
+    payload.name = name;
+    payload.detail = detail;
   }
-  const { url, key } = supabaseConfig();
-  const response = await fetch(url + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id), {
-    method: "PATCH",
-    headers: {
-      apikey: key,
-      Authorization: "Bearer " + session.accessToken,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
+
+  const response = await menuRequest(
+    table + "?id=eq." + encodeURIComponent(id),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify({ price, active }),
-    cache: "no-store",
+  );
+
+  if (!response.ok) adminRedirect("Could not save this menu item. Please try again.");
+  successRedirect("Menu item saved successfully.");
+}
+
+export async function addMenuItem(formData: FormData) {
+  const table = validTable(formData.get("table"));
+  const price = validPrice(formData.get("price"));
+  const active = formData.get("active") === "on";
+
+  if (!table || price === null) adminRedirect("Please enter a valid menu item and price.");
+
+  const payload: Record<string, unknown> = { price, active };
+
+  if (table === "cake_sizes") {
+    const label = cleanText(formData.get("label"));
+    if (!label) adminRedirect("Cake name is required.");
+    payload.id = crypto.randomUUID();
+    payload.label = label;
+  } else {
+    const name = cleanText(formData.get("name"));
+    const detail = cleanText(formData.get("detail"));
+    if (!name || !detail) adminRedirect("Small chops name and description are required.");
+    payload.id = crypto.randomUUID();
+    payload.name = name;
+    payload.detail = detail;
+  }
+
+  const orderResponse = await menuRequest(table + "?select=sort_order&order=sort_order.desc&limit=1");
+  if (!orderResponse.ok) adminRedirect("Could not prepare the new menu item.");
+
+  const rows = await orderResponse.json() as Array<{ sort_order: number }>;
+  payload.sort_order = (rows[0]?.sort_order ?? -1) + 1;
+
+  const response = await menuRequest(table, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(payload),
   });
-  if (!response.ok) redirect("/admin?error=Could%20not%20save.%20Please%20try%20again.");
-  redirect("/admin?saved=1");
+
+  if (!response.ok) adminRedirect("Could not add this menu item. Please try again.");
+  successRedirect("New menu item added successfully.");
+}
+
+export async function deleteMenuItem(formData: FormData) {
+  const table = validTable(formData.get("table"));
+  const id = cleanText(formData.get("id"));
+
+  if (!table || !id) adminRedirect("Invalid menu item.");
+
+  const response = await menuRequest(
+    table + "?id=eq." + encodeURIComponent(id),
+    { method: "DELETE", headers: { Prefer: "return=minimal" } },
+  );
+
+  if (!response.ok) adminRedirect("Could not remove this menu item. Please try again.");
+  successRedirect("Menu item removed successfully.");
 }
